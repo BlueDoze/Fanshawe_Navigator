@@ -1,0 +1,24 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "predio_id": "prédio_1_-_administração",
+        "nome": "Prédio 1 - Administração",
+        "descricao": "Prédio administrativo principal",
+        "andares": 1
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [50, 50],
+          [1141, 50],
+          [1141, 1634],
+          [50, 1634],
+          [50, 50]
+        ]]
+      }
+    }
+  ]
+}

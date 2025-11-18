@@ -1,0 +1,38 @@
+{
+  "campus": {
+    "nome": "Minha Universidade",
+    "predios": [
+      {
+        "id": "prédio_1_-_administração",
+        "nome": "Prédio 1 - Administração",
+        "imagem": "dados/imagens/Prédio 1 - Administração.png",
+        "dimensoes": {
+          "largura": 1191,
+          "altura": 1684
+        },
+        "locais": [
+          {
+            "id": "entrada_principal",
+            "nome": "Entrada Principal",
+            "tipo": "entrada",
+            "coordenadas": {
+              "x": 100,
+              "y": 50
+            },
+            "descricao": "Porta principal do prédio"
+          },
+          {
+            "id": "sala_101",
+            "nome": "Sala 101",
+            "tipo": "sala",
+            "coordenadas": {
+              "x": 200,
+              "y": 150
+            },
+            "descricao": "Sala de aula no primeiro andar"
+          }
+        ]
+      }
+    ]
+  }
+}
