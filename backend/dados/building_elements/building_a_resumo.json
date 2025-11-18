@@ -1,0 +1,25 @@
+{
+  "predio": "Building A",
+  "andares_processados": [
+    "A1",
+    "A2"
+  ],
+  "estatisticas": {
+    "A1": {
+      "salas": 1,
+      "portas": 0,
+      "saidas": 0,
+      "nos_corredor": 0
+    },
+    "A2": {
+      "salas": 0,
+      "portas": 0,
+      "saidas": 0,
+      "nos_corredor": 0
+    }
+  },
+  "arquivos_gerados": [
+    "C:\\Users\\pedri\\OneDrive\\Desktop\\New_Project\\backend\\dados\\building_elements\\building_a_a1_elementos.json",
+    "C:\\Users\\pedri\\OneDrive\\Desktop\\New_Project\\backend\\dados\\building_elements\\building_a_a2_elementos.json"
+  ]
+}

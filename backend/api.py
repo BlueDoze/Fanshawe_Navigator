@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import json
 import os
+from grafo_predios import GrafoPredios
 
 app = FastAPI(title="Campus Guide API")
 
@@ -42,12 +43,19 @@ def carregar_geojson():
 
 MAPAS_DATA = carregar_mapas()
 GEOJSON_DATA = carregar_geojson()
-def carregar_geojson():
+
+# Carregar grafo de prédios
+def carregar_grafo_predios():
     try:
-        with open("dados/campus.geojson", "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {"type": "FeatureCollection", "features": []}
+        grafo = GrafoPredios()
+        grafo.carregar_geojson("dados/campus.geojson")
+        grafo.criar_conexoes_automaticas(distancia_maxima=250.0)
+        return grafo
+    except Exception as e:
+        print(f"Erro ao carregar grafo: {e}")
+        return None
+
+GRAFO_PREDIOS = carregar_grafo_predios()
 
 MAPAS_DATA = carregar_mapas()
 
@@ -58,6 +66,10 @@ class PerguntaChat(BaseModel):
 
 class BuscaLocal(BaseModel):
     termo: str
+
+class RotaPrediosRequest(BaseModel):
+    origem: str  # Ex: "A", "Building A"
+    destino: str  # Ex: "M", "Building M"
 
 # ==================== ROTAS DA API ====================
 
@@ -508,6 +520,69 @@ def gerar_instrucoes_rota(caminho: list) -> list:
     return instrucoes
 
 # ==================== NOVA ROTA: GET LOCAIS ====================
+
+@app.post("/api/rota-predios")
+def calcular_rota_entre_predios_api(request: RotaPrediosRequest):
+    """
+    Calcula rota de navegação entre dois prédios do campus
+    
+    Exemplo de uso:
+    POST /api/rota-predios
+    {
+        "origem": "A",
+        "destino": "M"
+    }
+    
+    Retorna o caminho com coordenadas geográficas para desenhar no mapa
+    """
+    if not GRAFO_PREDIOS:
+        raise HTTPException(status_code=500, detail="Grafo de prédios não carregado")
+    
+    try:
+        rota = GRAFO_PREDIOS.calcular_rota(request.origem, request.destino)
+        
+        if not rota:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Nenhuma rota encontrada entre {request.origem} e {request.destino}"
+            )
+        
+        return {
+            "sucesso": True,
+            "rota": rota,
+            "instrucoes": [
+                f"Você está no {rota['origem']['nome']}",
+                *[f"Siga para o {p['nome']}" for p in rota['caminho'][1:-1]],
+                f"Chegue ao {rota['destino']['nome']}"
+            ],
+            "tempo_estimado": calcular_tempo_estimado(rota['distancia_metros'])
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/predios-disponiveis")
+def listar_predios_disponiveis():
+    """
+    Lista todos os prédios disponíveis para navegação
+    """
+    if not GRAFO_PREDIOS:
+        return {"predios": []}
+    
+    predios_lista = [
+        {
+            "id": info["id"],
+            "nome": info["nome"],
+            "ref": info["ref"],
+            "coords": info["centroide"]
+        }
+        for info in GRAFO_PREDIOS.predios.values()
+    ]
+    
+    return {
+        "total": len(predios_lista),
+        "predios": sorted(predios_lista, key=lambda x: x["ref"])
+    }
 
 @app.get("/api/predios/{predio_id}/locais")
 def listar_locais_predio(predio_id: str):

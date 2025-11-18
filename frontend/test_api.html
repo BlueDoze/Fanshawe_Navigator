@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste API</title>
+</head>
+<body>
+    <h1>Teste de Conexão API</h1>
+    <button onclick="testarAPI()">Testar /api/predios-disponiveis</button>
+    <pre id="resultado"></pre>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        
+        async function testarAPI() {
+            const resultado = document.getElementById('resultado');
+            resultado.textContent = 'Carregando...';
+            
+            try {
+                console.log('Fazendo requisição para:', `${API_URL}/api/predios-disponiveis`);
+                const response = await fetch(`${API_URL}/api/predios-disponiveis`);
+                
+                console.log('Status:', response.status);
+                console.log('Headers:', response.headers);
+                
+                const data = await response.json();
+                console.log('Dados recebidos:', data);
+                
+                resultado.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Erro:', error);
+                resultado.textContent = 'ERRO: ' + error.message;
+            }
+        }
+        
+        // Testar automaticamente ao carregar
+        window.onload = () => {
+            setTimeout(testarAPI, 500);
+        };
+    </script>
+</body>
+</html>

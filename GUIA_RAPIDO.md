@@ -1,13 +1,14 @@
-# 🚀 Guia Rápido - Campus Guide com GeoJSON + SVG
+# 🚀 Guia Rápido - Campus Guide com Mapa Geográfico Real
 
-## ✅ Implementação Completa!
+## ✅ Implementação Completa - Estilo Google Maps!
 
 ### 📦 O que está funcionando:
 
-1. **GeoJSON**: Polígonos dos prédios renderizados no mapa
-2. **SVG Overlay**: Plantas interativas sobre as imagens
-3. **Elementos Clicáveis**: Salas e entradas com hover effects
-4. **Geração Automática**: Script Python cria elementos SVG do mapas.json
+1. **Mapa Base Real**: OpenStreetMap (como Google Maps) centrado na universidade
+2. **GeoJSON Real**: Polígonos dos prédios com coordenadas geográficas (lat/lng)
+3. **Plantas Internas**: Sobreposição de imagens sobre prédios ao clicar
+4. **SVG Interativo**: Elementos clicáveis nas plantas internas
+5. **Navegação**: Zoom, pan, e volta ao mapa geral
 
 ---
 
@@ -27,232 +28,107 @@ python -m http.server 8080
 ```
 **URL:** http://localhost:8080
 
-### **Passo 3: Testar no Navegador**
+### **Passo 3: Navegar no Mapa**
 
-1. Abra http://localhost:8080
-2. Veja o polígono roxo do Prédio 1 no mapa
-3. Selecione "Prédio 1" no dropdown
-4. Veja a imagem PNG + SVG overlay
-5. **Passe o mouse** sobre "Entrada Principal" ou "Sala 101"
-   - Borda fica mais grossa
-   - Cor fica mais intensa
-   - Sombra aparece
-6. **Clique** em uma sala
-   - Mensagem aparece no chat
-   - Sala fica destacada por 2 segundos
+#### **Visão Geral (Mapa Geográfico):**
+1. Veja todos os prédios da Fanshawe College
+2. Prédios acadêmicos em roxo, outros em cinza
+3. **Passe o mouse** sobre prédio → destaque
+4. **Clique no prédio** → popup com informações
+5. **Clique em "Ver Planta Interna"** → muda para modo interno
 
----
-
-## 🛠️ Scripts Utilitários:
-
-### **1. Gerar SVG Interativo Automaticamente**
-```bash
-cd backend
-python gerar_svg_interativo.py
-```
-**O que faz:**
-- Lê `mapas.json`
-- Cria retângulos SVG para cada local
-- Adiciona emojis baseado no tipo (🚪 entrada, 📚 sala, etc.)
-- Insere estilos CSS com hover effects
-- Atualiza arquivos em `dados/svg/`
-
-### **2. Processar Novos PDFs**
-```bash
-cd backend
-python process_pdf.py
-```
-**O que faz:**
-- Converte PDF → PNG (para imagem de fundo)
-- Converte PDF → SVG (para elementos interativos)
-- Cria estrutura em `mapas.json`
-- Salva em `dados/imagens/` e `dados/svg/`
+#### **Modo Planta Interna:**
+1. Imagem PNG da planta sobreposta ao prédio
+2. Marcadores dos locais (salas, entradas)
+3. SVG overlay com elementos clicáveis
+4. **Clique em "🗺️ Voltar ao Mapa Geral"** → volta ao mapa
 
 ---
 
-## 📝 Adicionar Mais Locais:
+## 🗺️ Diferenças: Antes vs Agora
 
-### **Opção 1: Editar mapas.json manualmente**
-
-```json
-{
-  "locais": [
-    {
-      "id": "sala_102",
-      "nome": "Sala 102",
-      "tipo": "sala",
-      "coordenadas": {"x": 920, "y": 1056},
-      "descricao": "Sala de informática"
-    },
-    {
-      "id": "banheiro_masculino",
-      "nome": "Banheiro Masculino",
-      "tipo": "banheiro",
-      "coordenadas": {"x": 600, "y": 800},
-      "descricao": "Banheiro no primeiro andar"
-    }
-  ]
-}
-```
-
-Depois execute:
-```bash
-python gerar_svg_interativo.py
-```
-
-### **Opção 2: Editar SVG diretamente no Inkscape**
-
-1. Abra `dados/svg/Prédio 1 - Administração.svg` no Inkscape
-2. Use ferramenta Retângulo (R)
-3. Desenhe sobre a sala
-4. Clique direito → Object Properties
-5. Defina ID (ex: "sala_103")
-6. Defina Class (ex: "sala")
-7. Salve como "Plain SVG"
+| Aspecto | Antes (Pixel) | Agora (Geográfico) |
+|---------|---------------|-------------------|
+| **Sistema de Coordenadas** | `L.CRS.Simple` (pixel) | `L.CRS.EPSG3857` (lat/lng) |
+| **Mapa Base** | Apenas imagem PNG | OpenStreetMap tiles |
+| **Navegação** | Limitada à imagem | Zoom ilimitado, estilo Google |
+| **Localização** | Relativa | Coordenadas reais GPS |
+| **GeoJSON** | Coordenadas pixel | Coordenadas geográficas |
+| **Experiência** | Mapa estático | Mapa interativo dinâmico |
 
 ---
 
-## 🎨 Tipos de Locais e Cores:
+## 📍 Coordenadas da Fanshawe College:
 
-| Tipo | Cor | Emoji |
-|------|-----|-------|
-| `entrada` | Verde #28a745 | 🚪 |
-| `sala` | Roxo #667eea | 📚 |
-| `banheiro` | Azul #17a2b8 | 🚽 |
-| `laboratorio` | Amarelo #ffc107 | 🔬 |
-| `biblioteca` | Roxo escuro #6f42c1 | 📖 |
-| `auditorio` | Rosa #e83e8c | 🎭 |
-| `cantina` | Laranja #fd7e14 | 🍴 |
-| `default` | Cinza #6c757d | 📍 |
+- **Centro**: `[43.0125, -81.2002]`
+- **Zoom Inicial**: 16 (visão geral do campus)
+- **Zoom Mínimo**: 14 (bairro)
+- **Zoom Máximo**: 20 (detalhes internos)
 
-Para adicionar novo tipo, edite `gerar_svg_interativo.py`:
-```python
-cores = {
-    'secretaria': {'fill': '#ff6b6b', 'emoji': '📋'},
-    # ...
-}
+---
+
+## 🎨 Funcionalidades do Mapa:
+
+### **1. Visão Geral:**
+- ✅ Mapa base OpenStreetMap
+- ✅ Polígonos GeoJSON dos prédios
+- ✅ Cores diferenciadas por tipo:
+  - `building=college` → Roxo (#667eea)
+  - Outros → Cinza (#95a5a6)
+- ✅ Hover effects (destaque ao passar mouse)
+- ✅ Popups informativos com dados do prédio
+
+### **2. Plantas Internas:**
+- ✅ ImageOverlay sobreposto ao prédio
+- ✅ Conversão automática pixel → lat/lng
+- ✅ Marcadores de locais (salas, entradas)
+- ✅ SVG overlay com elementos interativos
+- ✅ Botão "Voltar ao Mapa Geral"
+
+### **3. Rotas:**
+- ✅ Cálculo de rotas entre locais
+- ✅ Desenho de polyline no mapa
+- ✅ Marcadores de origem (verde) e destino (vermelho)
+- ✅ Suporte a coordenadas geográficas e pixel
+
+---
+
+## 🛠️ Arquivos Modificados:
+
+```
+frontend/index.html
+├── Mudado: L.CRS.Simple → Coordenadas geográficas
+├── Adicionado: L.tileLayer (OpenStreetMap)
+├── Adicionado: pixelParaLatLng() - conversão de coordenadas
+├── Adicionado: voltarMapaGeral() - navegação
+├── Atualizado: carregarGeoJSON() - estilos e popups
+└── Atualizado: carregarMapaPredio() - overlay geográfico
+
+backend/dados/campus.geojson
+└── Substituído: GeoJSON real da Fanshawe College
 ```
 
 ---
 
-## 🔧 Customizações:
+## 📚 Como Funciona a Conversão de Coordenadas:
 
-### **Mudar Opacidade do SVG:**
-`frontend/index.html`, linha ~405:
+### **Pixel → Lat/Lng:**
 ```javascript
-svgOverlay = L.svgOverlay(svgElement, bounds, {
-  interactive: true,
-  opacity: 0.7  // ← 0 = invisível, 1 = opaco
-})
-```
-
-### **Mudar Estilo do GeoJSON:**
-`frontend/index.html`, linha ~345:
-```javascript
-style: {
-  color: '#667eea',      // Cor da borda
-  weight: 3,             // Espessura
-  fillOpacity: 0.1,      // Transparência
-  fillColor: '#764ba2'   // Cor interna
+function pixelParaLatLng(pixelX, pixelY, dimensoes, bounds) {
+    // 1. Normalizar coordenadas pixel (0-1)
+    const normX = pixelX / dimensoes.largura;
+    const normY = pixelY / dimensoes.altura;
+    
+    // 2. Obter bounds geográficos do prédio
+    const latMin = bounds.getSouth();
+    const latMax = bounds.getNorth();
+    const lngMin = bounds.getWest();
+    const lngMax = bounds.getEast();
+    
+    // 3. Interpolar (Y invertido!)
+    const lat = latMax - (normY * (latMax - latMin));
+    const lng = lngMin + (normX * (lngMax - lngMin));
+    
+    return [lat, lng];
 }
 ```
-
-### **Mudar Tamanho dos Elementos SVG:**
-`gerar_svg_interativo.py`, linha ~42:
-```python
-tamanho = 80 if local_tipo == 'entrada' else 70
-```
-
----
-
-## 📊 Estrutura de Arquivos Atual:
-
-```
-New_Project/
-├── backend/
-│   ├── api.py                    ✅ API com endpoint /api/geojson
-│   ├── process_pdf.py            ✅ Converte PDF → PNG + SVG
-│   ├── gerar_svg_interativo.py   ✅ NOVO - Gera elementos SVG
-│   └── dados/
-│       ├── mapas.json            ✅ Coordenadas dos locais
-│       ├── campus.geojson        ✅ NOVO - Polígonos dos prédios
-│       ├── imagens/
-│       │   └── Prédio 1 - Administração.png  ✅ Imagem de fundo
-│       └── svg/
-│           └── Prédio 1 - Administração.svg  ✅ NOVO - Elementos interativos
-└── frontend/
-    └── index.html                ✅ Leaflet com GeoJSON + SVG overlay
-```
-
----
-
-## 🐛 Problemas Comuns:
-
-### **SVG não aparece:**
-```bash
-# Verificar se SVG existe
-ls backend/dados/svg/
-
-# Verificar se API retorna svg_url
-curl http://localhost:8000/api/predios/prédio_1_-_administração
-```
-
-### **Elementos não são clicáveis:**
-Adicione `style="pointer-events: all"` no elemento SVG:
-```xml
-<rect id="sala_101" style="...; pointer-events: all" />
-```
-
-### **Coordenadas erradas:**
-Use ferramenta de desenvolvedor do navegador:
-1. Abra a imagem PNG
-2. Clique com botão direito → Inspecionar
-3. Use ferramenta de seleção (Ctrl+Shift+C)
-4. Passe mouse sobre a sala
-5. Anote coordenadas X, Y
-
----
-
-## 🎯 Próximos Passos:
-
-### ✅ Já Funciona:
-- Visualização de GeoJSON no mapa
-- SVG overlay sobre imagens
-- Elementos clicáveis e com hover
-- Geração automática de SVG
-
-### 🚧 Melhorias Futuras:
-- [ ] Adicionar mais prédios (processar mais PDFs)
-- [ ] Criar rotas entre salas usando corredores SVG
-- [ ] Integrar pathfinding A* com elementos SVG
-- [ ] Adicionar diferentes andares (floor switcher)
-- [ ] Exportar para coordenadas geográficas reais (lat/lng)
-
----
-
-## 📚 Comandos Úteis:
-
-```bash
-# Processar novo PDF
-cd backend
-python process_pdf.py
-
-# Gerar elementos SVG
-python gerar_svg_interativo.py
-
-# Iniciar backend
-uvicorn api:app --reload --host 0.0.0.0 --port 8000
-
-# Iniciar frontend
-cd ../frontend
-python -m http.server 8080
-
-# Ver logs em tempo real
-# Abra F12 no navegador → Console
-```
-
----
-
-**Status:** ✅ **PRONTO PARA TESTAR!**
-
-Teste agora abrindo http://localhost:8080 e interagindo com o mapa! 🎉

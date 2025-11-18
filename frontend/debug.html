@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Debug - Teste de Conexão</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+        .log { margin: 5px 0; padding: 8px; border-radius: 4px; }
+        .info { background: #1e3a8a; }
+        .success { background: #166534; }
+        .error { background: #991b1b; }
+        h1 { color: #60a5fa; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Teste de Conexão API</h1>
+    <div id="logs"></div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        const logs = document.getElementById('logs');
+
+        function log(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = msg;
+            logs.appendChild(div);
+            console.log(msg);
+        }
+
+        async function testarConexao() {
+            log('🔍 Iniciando teste...', 'info');
+            log(`🌐 API_URL configurada: ${API_URL}`, 'info');
+
+            try {
+                const url = `${API_URL}/api/predios-disponiveis`;
+                log(`📡 Fazendo fetch para: ${url}`, 'info');
+
+                const response = await fetch(url);
+                log(`📨 Status: ${response.status}`, response.ok ? 'success' : 'error');
+                log(`📨 OK: ${response.ok}`, response.ok ? 'success' : 'error');
+
+                const data = await response.json();
+                log(`📦 Total de prédios: ${data.total}`, 'success');
+                log(`📦 Dados: ${JSON.stringify(data, null, 2)}`, 'success');
+
+                // Testar se consegue popular um select
+                const select = document.createElement('select');
+                select.style.cssText = 'margin-top: 20px; padding: 10px; font-size: 16px; width: 100%;';
+                
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Selecione o prédio';
+                select.appendChild(defaultOption);
+
+                data.predios.forEach(predio => {
+                    const option = document.createElement('option');
+                    option.value = predio.ref;
+                    option.textContent = `${predio.ref} - ${predio.nome}`;
+                    select.appendChild(option);
+                });
+
+                log(`✅ Select criado com ${select.options.length} opções`, 'success');
+                document.body.appendChild(select);
+
+            } catch (error) {
+                log(`❌ ERRO: ${error.message}`, 'error');
+                log(`❌ Stack: ${error.stack}`, 'error');
+            }
+        }
+
+        // Executar teste
+        window.onload = () => {
+            setTimeout(testarConexao, 500);
+        };
+    </script>
+</body>
+</html>
