@@ -65,6 +65,7 @@
             max-width: 80%;
             word-wrap: break-word;
             animation: slideIn 0.3s ease;
+            line-height: 1.6;
         }
 
         @keyframes slideIn {
@@ -89,6 +90,12 @@
             background: #f0f2f5;
             color: #333;
             align-self: flex-start;
+            white-space: pre-wrap;
+        }
+        
+        .message.bot strong {
+            color: #667eea;
+            font-weight: bold;
         }
 
         #chat-input-container {
@@ -382,27 +389,17 @@
 <body>
     <!-- Mapa Interativo -->
     <div id="map-container">
-        <div class="nav-predio-controls">
-            <h3>📍 Informações da Rota</h3>
-            
-            <div id="rota-info" class="rota-info" style="display: block;">
-                <p id="rota-origem-destino" style="font-weight: bold; color: #667eea; margin-bottom: 10px; font-size: 14px;"></p>
-                <p id="rota-distancia" style="font-size: 15px;"></p>
-                <p id="rota-tempo" style="font-size: 15px;"></p>
-            </div>
-            
-            <button id="limpar-rota-predios" class="btn-limpar-rota">
-                🗑️ Limpar Rota
-            </button>
-            
-            <!-- Campos hidden para compatibilidade com o código -->
-            <select id="predio-origem" style="display: none;"></select>
-            <select id="predio-destino" style="display: none;"></select>
-        </div>
+        <button id="limpar-rota-predios" class="btn-limpar-rota" style="position: absolute; top: 20px; right: 20px; z-index: 1000; padding: 12px 24px; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: none;">
+            🗑️ Limpar Rota
+        </button>
         
         <button id="voltar-mapa-btn" class="btn-voltar-mapa">
             🗺️ Voltar ao Mapa Geral
         </button>
+        
+        <!-- Selects escondidos para compatibilidade -->
+        <select id="predio-origem" style="display: none;"></select>
+        <select id="predio-destino" style="display: none;"></select>
         
         <div id="map"></div>
     </div>
@@ -445,6 +442,7 @@
         let geojsonLayer = null;
         let svgOverlay = null;
         let modoPlantaInterna = false;
+        let marcadoresPredios = {}; // Armazenar marcadores coloridos de cada prédio
 
         // Inicializar mapa Leaflet com coordenadas geográficas (como Google Maps)
         const map = L.map('map', {
@@ -484,20 +482,6 @@
                         const ref = props.ref ? ` (${props.ref})` : '';
                         const tipo = props.building || 'Edifício';
                         
-                        // Popup com informações
-                        layer.bindPopup(`
-                            <div style="min-width: 200px">
-                                <strong style="font-size: 16px; color: #667eea">${nome}${ref}</strong><br>
-                                <span style="color: #666; font-size: 12px">Tipo: ${tipo}</span><br>
-                                ${props['building:levels'] ? `<span style="color: #666; font-size: 12px">Andares: ${props['building:levels']}</span><br>` : ''}
-                                ${props.descricao ? `<p style="margin: 8px 0; font-size: 13px">${props.descricao}</p>` : ''}
-                                <button onclick="verDetalhesPredi('${props.predio_id || nome}')" 
-                                        style="margin-top: 8px; padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer">
-                                    Ver Planta Interna
-                                </button>
-                            </div>
-                        `);
-                        
                         // Destaque ao passar o mouse
                         layer.on('mouseover', function() {
                             this.setStyle({
@@ -509,6 +493,17 @@
                         layer.on('mouseout', function() {
                             geojsonLayer.resetStyle(this);
                         });
+                        
+                        // Adicionar evento de clique para mostrar informações
+                        if (props.ref) {
+                            layer.on('click', async function() {
+                                console.log(`🖱️ Clique no prédio ${props.ref}`);
+                                await mostrarInfoPredioNoChat(props.ref);
+                            });
+                            
+                            // Armazenar layer para atualização de cores
+                            marcadoresPredios[props.ref] = layer;
+                        }
                     }
                 }).addTo(map);
                 
@@ -519,6 +514,56 @@
                 
             } catch (error) {
                 console.error('Erro ao carregar GeoJSON:', error);
+            }
+        }
+        
+
+        
+        // Mostrar informações do prédio no chat ao clicar no marcador
+        async function mostrarInfoPredioNoChat(ref) {
+            try {
+                const response = await fetch(`${API_URL}/api/predios/${ref}/info`);
+                const data = await response.json();
+                
+                if (data.texto_formatado) {
+                    adicionarMensagemBot(data.texto_formatado);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar informações do prédio:', error);
+                adicionarMensagemBot(`Erro ao buscar informações do prédio ${ref}.`);
+            }
+        }
+        
+        // Atualizar cor dos prédios (verde para origem, vermelho para destino)
+        function atualizarMarcadoresPredios(origem, destino) {
+            console.log(`🎨 Atualizando cores dos prédios - Origem: ${origem}, Destino: ${destino}`);
+            console.log(`📦 Prédios disponíveis:`, Object.keys(marcadoresPredios));
+            
+            // Resetar estilo de todos os prédios
+            Object.keys(marcadoresPredios).forEach(ref => {
+                if (geojsonLayer) {
+                    geojsonLayer.resetStyle(marcadoresPredios[ref]);
+                }
+            });
+            
+            // Destacar origem (verde)
+            if (origem && marcadoresPredios[origem]) {
+                console.log(`🟢 Marcando origem: ${origem}`);
+                marcadoresPredios[origem].setStyle({
+                    fillColor: '#27ae60',
+                    fillOpacity: 0.7,
+                    weight: 4
+                });
+            }
+            
+            // Destacar destino (vermelho)
+            if (destino && marcadoresPredios[destino]) {
+                console.log(`🔴 Marcando destino: ${destino}`);
+                marcadoresPredios[destino].setStyle({
+                    fillColor: '#e74c3c',
+                    fillOpacity: 0.7,
+                    weight: 4
+                });
             }
         }
 
@@ -807,7 +852,16 @@
         function adicionarMensagem(texto, tipo) {
             const div = document.createElement('div');
             div.className = `message ${tipo}`;
-            div.textContent = texto;
+            
+            // Formatar texto com bullet points em HTML
+            let textoFormatado = texto
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Negrito
+                .replace(/\n\n/g, '<br><br>')  // Parágrafos
+                .replace(/\n/g, '<br>')  // Quebras de linha
+                .replace(/^• /gm, '&bull; ')  // Bullet principal
+                .replace(/  - /g, '&nbsp;&nbsp;&nbsp;&#8226; ');  // Sub-bullets
+            
+            div.innerHTML = textoFormatado;
             chatMessages.appendChild(div);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -905,13 +959,18 @@
                 const data = await response.json();
                 adicionarMensagemBot(data.resposta);
 
-                // Se o chatbot identificou origem e destino, calcular rota
+                // Se o chatbot identificou origem e destino, apenas atualizar marcadores
                 if (data.origem && data.destino) {
-                    document.getElementById('predio-origem').value = data.origem;
-                    document.getElementById('predio-destino').value = data.destino;
+                    // Atualizar cores dos marcadores
+                    atualizarMarcadoresPredios(data.origem, data.destino);
                     
-                    // Calcular rota automaticamente
-                    setTimeout(() => calcularRotaPredios(), 500);
+                    document.getElementById('limpar-rota-predios').style.display = 'block';
+                } else if (data.origem) {
+                    // Só origem identificada
+                    atualizarMarcadoresPredios(data.origem, null);
+                } else if (data.destino) {
+                    // Só destino identificado
+                    atualizarMarcadoresPredios(null, data.destino);
                 }
 
             } catch (error) {
@@ -986,17 +1045,16 @@
         }
         
         // Calcular rota entre prédios
-        async function calcularRotaPredios() {
-            const origem = document.getElementById('predio-origem').value;
-            const destino = document.getElementById('predio-destino').value;
+        async function calcularRotaPredios(origemParam = null, destinoParam = null) {
+            const origem = origemParam || document.getElementById('predio-origem').value;
+            const destino = destinoParam || document.getElementById('predio-destino').value;
             
             if (!origem || !destino) {
-                alert('Por favor, selecione origem e destino');
                 return;
             }
             
             if (origem === destino) {
-                alert('Origem e destino são o mesmo prédio!');
+                adicionarMensagemBot('Você já está no prédio de destino!');
                 return;
             }
             
@@ -1015,7 +1073,12 @@
                 console.log('Rota calculada:', data);
                 
                 desenharRotaPredios(data.rota);
-                mostrarInfoRota(data);
+                
+                // Mostrar informações no chat
+                const distancia = data.rota.distancia_total || 0;
+                const tempo = data.rota.tempo_estimado || 0;
+                adicionarMensagemBot(`📍 Rota calculada!\n🚶 Distância: ${distancia.toFixed(0)}m\n⏱️ Tempo estimado: ${tempo.toFixed(0)} min`);
+                
                 
                 if (data.rota.coordenadas_rota && data.rota.coordenadas_rota.length > 0) {
                     const coords = data.rota.coordenadas_rota.map(c => [c[1], c[0]]);
@@ -1140,50 +1203,9 @@
             //     dashArray: '10, 10'
             // }).addTo(map);
             
-            // Adicionar marcadores apenas na origem e destino (sem intermediários)
-            caminho.forEach((predio, index) => {
-                const isOrigem = index === 0;
-                const isDestino = index === caminho.length - 1;
-                
-                // Mostrar apenas origem e destino
-                if (!isOrigem && !isDestino) return;
-                
-                let cor = isOrigem ? '#28a745' : '#dc3545';
-                let icone = isOrigem ? '🚀' : '🎯';
-                
-                const marker = L.marker([predio.coords[1], predio.coords[0]], {
-                    icon: L.divIcon({
-                        html: `<div style="background: ${cor}; color: white; padding: 8px 12px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-                                ${icone} ${predio.ref}
-                              </div>`,
-                        className: '',
-                        iconSize: [60, 40],
-                        iconAnchor: [30, 20]
-                    })
-                }).addTo(map);
-                
-                marker.bindPopup(`<b>${predio.nome}</b><br>${isOrigem ? '🚀 Origem' : '🎯 Destino'}`);
-                marcadoresRotaPredios.push(marker);
-            });
-        }
-        
-        // Mostrar informações da rota
-        function mostrarInfoRota(data, origem = null, destino = null) {
-            // Se não receber origem/destino, pegar dos dropdowns
-            if (!origem) origem = document.getElementById('predio-origem').value;
-            if (!destino) destino = document.getElementById('predio-destino').value;
-            
-            // Buscar nomes dos prédios
-            const selectOrigem = document.getElementById('predio-origem');
-            const selectDestino = document.getElementById('predio-destino');
-            
-            const nomeOrigem = selectOrigem.options[selectOrigem.selectedIndex]?.text || origem;
-            const nomeDestino = selectDestino.options[selectDestino.selectedIndex]?.text || destino;
-            
-            document.getElementById('rota-origem-destino').textContent = `🚀 ${nomeOrigem} → 🎯 ${nomeDestino}`;
-            document.getElementById('rota-distancia').textContent = `📏 Distância: ${data.rota.distancia_metros}m`;
-            document.getElementById('rota-tempo').textContent = `⏱️ Tempo: ${data.tempo_estimado}`;
-            document.getElementById('rota-info').classList.add('visible');
+            // NÃO criar novos marcadores - apenas atualizar cores dos existentes
+            // Os marcadores já foram criados em carregarGeoJSON e são atualizados
+            // pela função atualizarMarcadoresPredios()
         }
         
         // Limpar rota
@@ -1192,9 +1214,14 @@
                 map.removeLayer(linhaRotaPredios);
                 linhaRotaPredios = null;
             }
-            marcadoresRotaPredios.forEach(m => map.removeLayer(m));
+            // Não remover marcadores - eles são permanentes e apenas mudam de cor
             marcadoresRotaPredios = [];
-            document.getElementById('rota-info').classList.remove('visible');
+            
+            // Resetar cores dos marcadores
+            atualizarMarcadoresPredios(null, null);
+            
+            // Esconder botão de limpar
+            document.getElementById('limpar-rota-predios').style.display = 'none';
         }
         
         // Event listeners

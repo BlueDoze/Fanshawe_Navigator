@@ -148,16 +148,95 @@ def buscar_local(busca: BuscaLocal):
     
     return {"resultados": resultados, "total": len(resultados)}
 
+def formatar_info_predio(info):
+    """Formata informações do prédio em bullet points"""
+    linhas = []
+    
+    # Título
+    linhas.append(f"📍 {info['nome']}")
+    linhas.append("")
+    
+    # Descrição
+    linhas.append(f"• {info['descricao']}")
+    linhas.append("")
+    
+    # Andares
+    if info.get('andares'):
+        andares_str = ', '.join(map(str, info['andares']))
+        linhas.append(f"• 🏢 Andares: {andares_str}")
+        linhas.append("")
+    
+    # Facilidades
+    if info.get('facilidades'):
+        linhas.append("• ✨ Facilidades disponíveis:")
+        for fac in info['facilidades']:
+            linhas.append(f"  - {fac}")
+        linhas.append("")
+    
+    # Salas principais
+    if info.get('salas_principais') and len(info['salas_principais']) > 0:
+        linhas.append("• 🚪 Principais salas:")
+        for sala in info['salas_principais']:
+            linhas.append(f"  - {sala['numero']}: {sala['tipo']} (Andar {sala['andar']})")
+        linhas.append("")
+    
+    # Horário
+    if info.get('horario_funcionamento'):
+        linhas.append(f"• 🕐 Horário de funcionamento:")
+        linhas.append(f"  - {info['horario_funcionamento']}")
+    
+    return '\n'.join(linhas)
+
 @app.post("/api/chat")
 def chat_endpoint(pergunta: PerguntaChat):
     """
-    Endpoint do chatbot - processa perguntas e retorna respostas usando LangChain
+    Endpoint do chatbot - processa perguntas e retorna respostas usando Gemini
     """
     mensagem = pergunta.mensagem
     
-    # Usar chatbot melhorado com LangChain
+    # Usar chatbot melhorado com Gemini
     resultado = chatbot.processar_mensagem(mensagem)
     
+    # Se for uma requisição de informações de prédio
+    if resultado.get("tipo") == "info_predio":
+        predio_ref = resultado.get("predio_ref")
+        
+        # Buscar informações do prédio
+        import json
+        import os
+        
+        caminho_info = os.path.join(os.path.dirname(__file__), "dados", "predios_info.json")
+        
+        try:
+            with open(caminho_info, 'r', encoding='utf-8') as f:
+                predios_info = json.load(f)
+            
+            if predio_ref in predios_info:
+                info = predios_info[predio_ref]
+                
+                # Formatar resposta em bullet points
+                texto = formatar_info_predio(info)
+                
+                return {
+                    "resposta": texto,
+                    "tipo": "info_predio",
+                    "predio_ref": predio_ref,
+                    "info_completa": info
+                }
+            else:
+                return {
+                    "resposta": f"Desculpe, não tenho informações detalhadas sobre o prédio {predio_ref} no momento. Você pode me perguntar sobre a localização ou rotas para este prédio.",
+                    "tipo": "info_predio",
+                    "predio_ref": predio_ref
+                }
+        except Exception as e:
+            print(f"Erro ao carregar informações do prédio: {e}")
+            return {
+                "resposta": f"Ocorreu um erro ao buscar informações do prédio {predio_ref}. Tente novamente.",
+                "tipo": "erro"
+            }
+    
+    # Resposta normal de navegação
     return {
         "resposta": resultado["resposta"],
         "origem": resultado.get("origem"),
@@ -589,6 +668,54 @@ def listar_predios_disponiveis():
         "total": len(predios_lista),
         "predios": sorted(predios_lista, key=lambda x: x["ref"])
     }
+
+@app.get("/api/predios/{predio_ref}/info")
+def obter_info_predio(predio_ref: str):
+    """
+    Retorna informações detalhadas de um prédio específico
+    """
+    import json
+    import os
+    
+    # Carregar informações dos prédios
+    caminho_info = os.path.join(os.path.dirname(__file__), "dados", "predios_info.json")
+    
+    try:
+        with open(caminho_info, 'r', encoding='utf-8') as f:
+            predios_info = json.load(f)
+        
+        predio_ref_upper = predio_ref.upper()
+        
+        if predio_ref_upper in predios_info:
+            info = predios_info[predio_ref_upper]
+            
+            # Formatar resposta em bullet points
+            texto = formatar_info_predio(info)
+            
+            return {
+                "ref": predio_ref_upper,
+                "info": info,
+                "texto_formatado": texto
+            }
+        else:
+            return {
+                "ref": predio_ref_upper,
+                "info": None,
+                "texto_formatado": f"Informações do prédio {predio_ref_upper} não disponíveis no momento."
+            }
+    
+    except FileNotFoundError:
+        return {
+            "ref": predio_ref.upper(),
+            "info": None,
+            "texto_formatado": "Base de dados de informações dos prédios não encontrada."
+        }
+    except Exception as e:
+        return {
+            "ref": predio_ref.upper(),
+            "info": None,
+            "texto_formatado": f"Erro ao carregar informações: {str(e)}"
+        }
 
 @app.get("/api/predios/{predio_id}/locais")
 def listar_locais_predio(predio_id: str):
