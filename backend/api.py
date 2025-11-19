@@ -5,6 +5,7 @@ from pydantic import BaseModel
 import json
 import os
 from grafo_predios import GrafoPredios
+from chatbot import chatbot
 
 app = FastAPI(title="Campus Guide API")
 
@@ -150,14 +151,19 @@ def buscar_local(busca: BuscaLocal):
 @app.post("/api/chat")
 def chat_endpoint(pergunta: PerguntaChat):
     """
-    Endpoint do chatbot - processa perguntas e retorna respostas
+    Endpoint do chatbot - processa perguntas e retorna respostas usando LangChain
     """
-    mensagem = pergunta.mensagem.lower()
+    mensagem = pergunta.mensagem
     
-    # Lógica básica do chatbot (você pode melhorar com IA depois)
-    resposta = processar_pergunta_chatbot(mensagem)
+    # Usar chatbot melhorado com LangChain
+    resultado = chatbot.processar_mensagem(mensagem)
     
-    return resposta
+    return {
+        "resposta": resultado["resposta"],
+        "origem": resultado.get("origem"),
+        "destino": resultado.get("destino"),
+        "acao": "navegar" if resultado.get("origem") and resultado.get("destino") else None
+    }
 
 def processar_pergunta_chatbot(mensagem: str):
     """

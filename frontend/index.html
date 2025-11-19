@@ -383,36 +383,21 @@
     <!-- Mapa Interativo -->
     <div id="map-container">
         <div class="nav-predio-controls">
-            <h3>📍 Navegação Entre Prédios</h3>
+            <h3>📍 Informações da Rota</h3>
             
-            <div class="nav-group">
-                <label for="predio-origem">De onde você está:</label>
-                <select id="predio-origem">
-                    <option value="">Selecione o prédio</option>
-                </select>
+            <div id="rota-info" class="rota-info" style="display: block;">
+                <p id="rota-origem-destino" style="font-weight: bold; color: #667eea; margin-bottom: 10px; font-size: 14px;"></p>
+                <p id="rota-distancia" style="font-size: 15px;"></p>
+                <p id="rota-tempo" style="font-size: 15px;"></p>
             </div>
-
-            <div class="nav-group">
-                <label for="predio-destino">Para onde quer ir:</label>
-                <select id="predio-destino">
-                    <option value="">Selecione o prédio</option>
-                </select>
-            </div>
-
-            <button id="calcular-rota-predios" class="btn-calcular-rota">
-                🧭 Calcular Rota
-            </button>
             
             <button id="limpar-rota-predios" class="btn-limpar-rota">
                 🗑️ Limpar Rota
             </button>
             
-            <div id="rota-info" class="rota-info">
-                <h4>Informações da Rota</h4>
-                <p id="rota-distancia"></p>
-                <p id="rota-tempo"></p>
-                <p id="rota-caminho"></p>
-            </div>
+            <!-- Campos hidden para compatibilidade com o código -->
+            <select id="predio-origem" style="display: none;"></select>
+            <select id="predio-destino" style="display: none;"></select>
         </div>
         
         <button id="voltar-mapa-btn" class="btn-voltar-mapa">
@@ -537,8 +522,11 @@
             }
         }
 
-        // Carregar dados dos prédios
+        // Carregar dados dos prédios (DESABILITADO - não usado mais)
         async function carregarPredios() {
+            // Função antiga removida - agora usamos carregarPrediosDisponiveis()
+            return;
+            /*
             try {
                 const response = await fetch(`${API_URL}/api/predios`);
                 const data = await response.json();
@@ -563,6 +551,7 @@
                 console.error('Erro ao carregar prédios:', error);
                 adicionarMensagemBot('⚠️ Erro ao conectar com o servidor. Verifique se o backend está rodando.');
             }
+            */
         }
 
         // Função global para ver detalhes do prédio
@@ -831,6 +820,69 @@
             adicionarMensagem(texto, 'user');
         }
 
+        // Detectar intenção de navegação na mensagem
+        function detectarIntencaoNavegacao(mensagem) {
+            const msg = mensagem.toLowerCase();
+            
+            // Lista de prédios possíveis
+            const predios = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'sc', 't'];
+            const nomesPredios = {
+                'a': 'A', 'b': 'B', 'c': 'C', 'd': 'D', 'e': 'E', 
+                'f': 'F', 'g': 'G', 'h': 'H', 'j': 'J', 'k': 'K', 
+                'm': 'M', 'sc': 'SC', 't': 'T',
+                'building a': 'A', 'building b': 'B', 'building c': 'C',
+                'building d': 'D', 'building e': 'E', 'building f': 'F',
+                'building g': 'G', 'building h': 'H', 'building j': 'J',
+                'building k': 'K', 'building m': 'M', 'building t': 'T',
+                'predio a': 'A', 'predio b': 'B', 'predio c': 'C',
+                'predio d': 'D', 'predio e': 'E', 'predio f': 'F',
+                'predio g': 'G', 'predio h': 'H', 'predio j': 'J',
+                'predio k': 'K', 'predio m': 'M', 'predio t': 'T',
+                'prédio a': 'A', 'prédio b': 'B', 'prédio c': 'C',
+                'student centre': 'SC', 'centro estudantil': 'SC'
+            };
+            
+            let origem = null;
+            let destino = null;
+            
+            // Padrões de origem: "estou em/no", "estou na", "estou no predio"
+            const padraoOrigem = /(estou|tô|to) (em|no|na|no predio|no prédio|na building|no building)\s+([a-z]+)/gi;
+            const matchOrigem = msg.match(padraoOrigem);
+            if (matchOrigem) {
+                for (let key in nomesPredios) {
+                    if (msg.includes(key)) {
+                        origem = nomesPredios[key];
+                        break;
+                    }
+                }
+            }
+            
+            // Padrões de destino: "ir para", "quero ir", "como chegar", "ir ao/à"
+            const padraoDestino = /(ir|chegar|vou|quero ir|como chegar|ir para|ir ao|ir à|ir no|ir na|para o|para a)\s+(predio|prédio|building)?\s*([a-z]+)/gi;
+            const matchDestino = msg.match(padraoDestino);
+            if (matchDestino) {
+                // Procurar último prédio mencionado (geralmente é o destino)
+                for (let i = predios.length - 1; i >= 0; i--) {
+                    const predio = predios[i];
+                    if (msg.includes(' ' + predio) || msg.includes(predio + ' ') || 
+                        msg.includes('building ' + predio) || msg.includes('predio ' + predio) ||
+                        msg.includes('prédio ' + predio)) {
+                        destino = predio.toUpperCase();
+                        break;
+                    }
+                }
+            }
+            
+            // Extrair menções diretas de letras (ex: "A para M", "de B para H")
+            const matchDireto = msg.match(/\b([a-z])\s+(para|ate|até)\s+([a-z])\b/i);
+            if (matchDireto) {
+                origem = matchDireto[1].toUpperCase();
+                destino = matchDireto[3].toUpperCase();
+            }
+            
+            return { origem, destino };
+        }
+
         // Enviar mensagem ao chatbot
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -853,15 +905,13 @@
                 const data = await response.json();
                 adicionarMensagemBot(data.resposta);
 
-                // Se houver ação de mostrar no mapa
-                if (data.acao === 'mostrar_no_mapa' && data.dados) {
-                    const predioId = data.dados.predio_id;
-                    document.getElementById('predio-select').value = predioId;
-                    await carregarMapaPredio(predioId);
+                // Se o chatbot identificou origem e destino, calcular rota
+                if (data.origem && data.destino) {
+                    document.getElementById('predio-origem').value = data.origem;
+                    document.getElementById('predio-destino').value = data.destino;
                     
-                    // Destacar o local
-                    const coords = data.dados.coordenadas;
-                    map.setView([coords.y, coords.x], 1);
+                    // Calcular rota automaticamente
+                    setTimeout(() => calcularRotaPredios(), 500);
                 }
 
             } catch (error) {
@@ -872,7 +922,7 @@
 
         // Inicializar aplicação
         carregarGeoJSON();  // Carrega GeoJSON primeiro
-        carregarPredios();
+        // carregarPredios(); // Função antiga desabilitada
         carregarPrediosDisponiveis();  // Carregar prédios para navegação
         
         // ==================== NAVEGAÇÃO ENTRE PRÉDIOS ====================
@@ -978,26 +1028,128 @@
             }
         }
         
+        // Encontrar ponto mais próximo no polígono do prédio
+        function encontrarPontoMaisProximo(coords, pontoAlvo) {
+            // coords é um array de [lng, lat]
+            // pontoAlvo é [lat, lng] (formato Leaflet)
+            let menorDistancia = Infinity;
+            let pontoMaisProximo = null;
+            
+            coords.forEach(coord => {
+                const latLng = [coord[1], coord[0]]; // Converter [lng, lat] para [lat, lng]
+                const distancia = Math.sqrt(
+                    Math.pow(latLng[0] - pontoAlvo[0], 2) + 
+                    Math.pow(latLng[1] - pontoAlvo[1], 2)
+                );
+                
+                if (distancia < menorDistancia) {
+                    menorDistancia = distancia;
+                    pontoMaisProximo = latLng;
+                }
+            });
+            
+            return pontoMaisProximo;
+        }
+        
+        // Obter coordenadas do polígono de um prédio do GeoJSON
+        function obterPoligonoPredi(ref) {
+            if (!geojsonLayer) return null;
+            
+            let coordenadas = null;
+            geojsonLayer.eachLayer(layer => {
+                if (layer.feature && layer.feature.properties.ref === ref) {
+                    const geometry = layer.feature.geometry;
+                    if (geometry.type === 'Polygon') {
+                        coordenadas = geometry.coordinates[0]; // Primeiro anel do polígono
+                    } else if (geometry.type === 'MultiPolygon') {
+                        coordenadas = geometry.coordinates[0][0]; // Primeiro polígono, primeiro anel
+                    }
+                }
+            });
+            
+            return coordenadas;
+        }
+        
         // Desenhar rota entre prédios
         function desenharRotaPredios(rota) {
             const caminho = rota.caminho;
             if (!caminho || caminho.length < 2) return;
             
-            const latlngs = caminho.map(p => [p.coords[1], p.coords[0]]);
+            // Construir pontos da rota simulando caminhada real
+            const pontosRota = [];
             
-            linhaRotaPredios = L.polyline(latlngs, {
-                color: '#FF6B6B',
-                weight: 4,
-                opacity: 0.8,
-                dashArray: '10, 10'
-            }).addTo(map);
+            for (let i = 0; i < caminho.length; i++) {
+                const predioAtual = caminho[i];
+                const centroAtual = [predioAtual.coords[1], predioAtual.coords[0]];
+                const poligonoAtual = obterPoligonoPredi(predioAtual.ref);
+                
+                if (i === 0) {
+                    // PRÉDIO DE ORIGEM
+                    if (poligonoAtual && caminho.length > 1) {
+                        // Adicionar centro do prédio (você está aqui)
+                        pontosRota.push(centroAtual);
+                        
+                        // Encontrar saída mais próxima do próximo destino
+                        const proximoPredioCentro = [caminho[1].coords[1], caminho[1].coords[0]];
+                        const pontoSaida = encontrarPontoMaisProximo(poligonoAtual, proximoPredioCentro);
+                        pontosRota.push(pontoSaida);
+                    } else {
+                        pontosRota.push(centroAtual);
+                    }
+                    
+                } else if (i === caminho.length - 1) {
+                    // PRÉDIO DE DESTINO
+                    if (poligonoAtual) {
+                        // Entrar pela porta mais próxima do prédio anterior
+                        const ultimoPonto = pontosRota[pontosRota.length - 1];
+                        const pontoEntrada = encontrarPontoMaisProximo(poligonoAtual, ultimoPonto);
+                        pontosRota.push(pontoEntrada);
+                        
+                        // Ir até o centro do prédio (destino final)
+                        pontosRota.push(centroAtual);
+                    } else {
+                        pontosRota.push(centroAtual);
+                    }
+                    
+                } else {
+                    // PRÉDIO INTERMEDIÁRIO (atravessar)
+                    if (poligonoAtual) {
+                        // Entrar pela porta mais próxima do ponto anterior
+                        const ultimoPonto = pontosRota[pontosRota.length - 1];
+                        const pontoEntrada = encontrarPontoMaisProximo(poligonoAtual, ultimoPonto);
+                        pontosRota.push(pontoEntrada);
+                        
+                        // Atravessar o prédio (passar pelo centro)
+                        pontosRota.push(centroAtual);
+                        
+                        // Sair pela porta mais próxima do próximo prédio
+                        const proximoPredioCentro = [caminho[i+1].coords[1], caminho[i+1].coords[0]];
+                        const pontoSaida = encontrarPontoMaisProximo(poligonoAtual, proximoPredioCentro);
+                        pontosRota.push(pontoSaida);
+                    } else {
+                        pontosRota.push(centroAtual);
+                    }
+                }
+            }
             
+            // Linha removida - mostrar apenas marcadores
+            // linhaRotaPredios = L.polyline(pontosRota, {
+            //     color: '#FF6B6B',
+            //     weight: 4,
+            //     opacity: 0.8,
+            //     dashArray: '10, 10'
+            // }).addTo(map);
+            
+            // Adicionar marcadores apenas na origem e destino (sem intermediários)
             caminho.forEach((predio, index) => {
                 const isOrigem = index === 0;
                 const isDestino = index === caminho.length - 1;
                 
-                let cor = isOrigem ? '#28a745' : isDestino ? '#dc3545' : '#ffc107';
-                let icone = isOrigem ? '🚀' : isDestino ? '🎯' : '📍';
+                // Mostrar apenas origem e destino
+                if (!isOrigem && !isDestino) return;
+                
+                let cor = isOrigem ? '#28a745' : '#dc3545';
+                let icone = isOrigem ? '🚀' : '🎯';
                 
                 const marker = L.marker([predio.coords[1], predio.coords[0]], {
                     icon: L.divIcon({
@@ -1010,16 +1162,27 @@
                     })
                 }).addTo(map);
                 
-                marker.bindPopup(`<b>${predio.nome}</b><br>${isOrigem ? '🚀 Origem' : isDestino ? '🎯 Destino' : '📍 Passando'}`);
+                marker.bindPopup(`<b>${predio.nome}</b><br>${isOrigem ? '🚀 Origem' : '🎯 Destino'}`);
                 marcadoresRotaPredios.push(marker);
             });
         }
         
         // Mostrar informações da rota
-        function mostrarInfoRota(data) {
+        function mostrarInfoRota(data, origem = null, destino = null) {
+            // Se não receber origem/destino, pegar dos dropdowns
+            if (!origem) origem = document.getElementById('predio-origem').value;
+            if (!destino) destino = document.getElementById('predio-destino').value;
+            
+            // Buscar nomes dos prédios
+            const selectOrigem = document.getElementById('predio-origem');
+            const selectDestino = document.getElementById('predio-destino');
+            
+            const nomeOrigem = selectOrigem.options[selectOrigem.selectedIndex]?.text || origem;
+            const nomeDestino = selectDestino.options[selectDestino.selectedIndex]?.text || destino;
+            
+            document.getElementById('rota-origem-destino').textContent = `🚀 ${nomeOrigem} → 🎯 ${nomeDestino}`;
             document.getElementById('rota-distancia').textContent = `📏 Distância: ${data.rota.distancia_metros}m`;
             document.getElementById('rota-tempo').textContent = `⏱️ Tempo: ${data.tempo_estimado}`;
-            document.getElementById('rota-caminho').textContent = `🗺️ Caminho: ${data.rota.caminho.map(p => p.ref).join(' → ')}`;
             document.getElementById('rota-info').classList.add('visible');
         }
         
@@ -1035,7 +1198,7 @@
         }
         
         // Event listeners
-        document.getElementById('calcular-rota-predios').addEventListener('click', calcularRotaPredios);
+        // Botão de calcular rota removido - agora usa apenas chatbot
         document.getElementById('limpar-rota-predios').addEventListener('click', limparRotaPredios);
     </script>
 </body>
