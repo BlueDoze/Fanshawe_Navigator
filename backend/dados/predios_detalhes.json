@@ -1,0 +1,170 @@
+{
+  "A": {
+    "nome": "A_Building",
+    "ref": "A",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n"
+  },
+  "B": {
+    "nome": "B_Building",
+    "ref": "B",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n"
+  },
+  "C": {
+    "nome": "C_Building",
+    "ref": "C",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n"
+  },
+  "D": {
+    "nome": "D_Building",
+    "ref": "D",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n\n--- Página 4 ---\n"
+  },
+  "E": {
+    "nome": "E_Building",
+    "ref": "E",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n"
+  },
+  "F": {
+    "nome": "F_Building",
+    "ref": "F",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n\n--- Página 4 ---\n"
+  },
+  "G": {
+    "nome": "G_Building",
+    "ref": "G",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n"
+  },
+  "H": {
+    "nome": "H_Building",
+    "ref": "H",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n\n--- Página 4 ---\n"
+  },
+  "J": {
+    "nome": "J_Building",
+    "ref": "J",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n"
+  },
+  "K": {
+    "nome": "K_Building",
+    "ref": "K",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n"
+  },
+  "L": {
+    "nome": "L_Building",
+    "ref": "L",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n\n--- Página 4 ---\n\n--- Página 5 ---\n\n--- Página 6 ---\n"
+  },
+  "M": {
+    "nome": "M_Building",
+    "ref": "M",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n\n--- Página 4 ---\n"
+  },
+  "N": {
+    "nome": "N_Building",
+    "ref": "N",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n"
+  },
+  "Residence2": {
+    "nome": "Residence2_Building",
+    "ref": "Residence2",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n\n--- Página 4 ---\n\n--- Página 5 ---\n\n--- Página 6 ---\n\n--- Página 7 ---\n"
+  },
+  "Residence3": {
+    "nome": "Residence3_Building",
+    "ref": "Residence3",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n\n--- Página 4 ---\n\n--- Página 5 ---\n\n--- Página 6 ---\n\n--- Página 7 ---\n"
+  },
+  "Residence": {
+    "nome": "Residence_Building",
+    "ref": "Residence",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n\n--- Página 4 ---\n\n--- Página 5 ---\n\n--- Página 6 ---\n\n--- Página 7 ---\n"
+  },
+  "StudentCenter": {
+    "nome": "StudentCenter_Building",
+    "ref": "StudentCenter",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n"
+  },
+  "StudentUnion": {
+    "nome": "StudentUnion_Building",
+    "ref": "StudentUnion",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n"
+  },
+  "T": {
+    "nome": "T_Building",
+    "ref": "T",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n\n--- Página 4 ---\n"
+  },
+  "Y": {
+    "nome": "Y_Building",
+    "ref": "Y",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n"
+  },
+  "Z": {
+    "nome": "Z_Building",
+    "ref": "Z",
+    "salas": [],
+    "facilidades": [],
+    "andares": [],
+    "texto_completo": "\n--- Página 1 ---\n\n--- Página 2 ---\n\n--- Página 3 ---\n"
+  }
+}
