@@ -26,6 +26,8 @@ export default function FanshaweNavigator() {
   const [routeData, setRouteData] = useState(null);
   const [originBuilding, setOriginBuilding] = useState(null);
   const [destBuilding, setDestBuilding] = useState(null);
+  const [buildingInfo, setBuildingInfo] = useState(null);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const messagesEndRef = useRef(null);
 
   const API_URL = 'http://localhost:8000';
@@ -199,12 +201,8 @@ export default function FanshaweNavigator() {
             const response = await fetch(`${API_URL}/api/predios/${props.ref}/info`);
             const data = await response.json();
             
-            if (data.texto_formatado) {
-              const infoMessage = {
-                role: 'assistant',
-                content: data.texto_formatado
-              };
-              setMessages(prev => [...prev, infoMessage]);
+            if (data.info) {
+              setBuildingInfo(data);
             }
           } catch (error) {
             console.error('Error fetching building info:', error);
@@ -229,7 +227,11 @@ export default function FanshaweNavigator() {
   return (
     <div className="flex h-screen bg-fanshawe-cream text-gray-800">
       {/* Sidebar */}
-      <div className="w-64 bg-[#d4d6ce] border-r border-gray-300 flex flex-col">
+      <div 
+        className={`w-64 bg-[#d4d6ce] border-r border-gray-300 flex flex-col fixed left-0 top-0 h-full transition-transform duration-300 ease-in-out z-20 ${
+          sidebarVisible ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div className="p-4 border-b border-gray-300">
           <div className="flex items-center justify-center mb-4">
             <img 
@@ -279,7 +281,9 @@ export default function FanshaweNavigator() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
+        sidebarVisible ? 'ml-64' : 'ml-0'
+      }`}>
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 bg-fanshawe-cream relative">
           {/* Watermark background */}
@@ -329,6 +333,13 @@ export default function FanshaweNavigator() {
         {/* Input Area */}
         <div className="border-t border-gray-300 p-4 bg-fanshawe-cream">
           <div className="max-w-3xl mx-auto flex gap-3">
+            <button
+              onClick={() => setSidebarVisible(!sidebarVisible)}
+              className="bg-fanshawe-red-dark hover:bg-fanshawe-red p-3 rounded-lg transition-colors flex-shrink-0"
+              aria-label="Toggle Menu"
+            >
+              <MessageSquare className="text-white" size={20} />
+            </button>
             <input
               type="text"
               value={input}
@@ -362,28 +373,91 @@ export default function FanshaweNavigator() {
                 <X size={24} />
               </button>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden relative">
               {geoJsonData ? (
-                <MapContainer
-                  center={[43.0125, -81.2002]}
-                  zoom={16}
-                  style={{ height: '100%', width: '100%' }}
-                  className="z-0"
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <GeoJSON 
-                    data={geoJsonData} 
-                    style={getFeatureStyle}
-                    onEachFeature={onEachFeature}
-                  />
-                  {mapBounds && <FitBounds bounds={mapBounds} />}
-                </MapContainer>
+                <>
+                  <MapContainer
+                    center={[43.0125, -81.2002]}
+                    zoom={16}
+                    style={{ height: '100%', width: '100%' }}
+                    className="z-0"
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <GeoJSON 
+                      data={geoJsonData} 
+                      style={getFeatureStyle}
+                      onEachFeature={onEachFeature}
+                    />
+                    {mapBounds && <FitBounds bounds={mapBounds} />}
+                  </MapContainer>
+                  
+                  {/* Building Info Popup */}
+                  {buildingInfo && (
+                    <div className="absolute top-4 right-4 bg-white rounded-lg shadow-2xl p-6 max-w-md z-10 border-2 border-fanshawe-red">
+                      <div className="flex justify-between items-start mb-4">
+                        <h4 className="text-xl font-bold text-fanshawe-red">
+                          {buildingInfo.info.nome}
+                        </h4>
+                        <button
+                          onClick={() => setBuildingInfo(null)}
+                          className="text-gray-500 hover:text-fanshawe-red transition-colors"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-3 text-gray-700">
+                        {buildingInfo.info.descricao && (
+                          <p className="text-sm">{buildingInfo.info.descricao}</p>
+                        )}
+                        
+                        {buildingInfo.info.andares && buildingInfo.info.andares.length > 0 && (
+                          <div>
+                            <p className="font-semibold text-sm">🏢 Floors:</p>
+                            <p className="text-sm">{buildingInfo.info.andares.join(', ')}</p>
+                          </div>
+                        )}
+                        
+                        {buildingInfo.info.facilidades && buildingInfo.info.facilidades.length > 0 && (
+                          <div>
+                            <p className="font-semibold text-sm">✨ Facilities:</p>
+                            <ul className="text-sm list-disc list-inside">
+                              {buildingInfo.info.facilidades.map((fac, idx) => (
+                                <li key={idx}>{fac}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {buildingInfo.info.salas_principais && buildingInfo.info.salas_principais.length > 0 && (
+                          <div>
+                            <p className="font-semibold text-sm">📚 Main Rooms:</p>
+                            <ul className="text-sm list-disc list-inside">
+                              {buildingInfo.info.salas_principais.slice(0, 5).map((sala, idx) => (
+                                <li key={idx}>
+                                  {sala.numero} - {sala.tipo} (Floor {sala.andar})
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {buildingInfo.info.horario_funcionamento && (
+                          <div>
+                            <p className="font-semibold text-sm">🕐 Hours:</p>
+                            <p className="text-sm">{buildingInfo.info.horario_funcionamento}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-fanshawe-cream">Loading map...</p>
+                  <p className="text-gray-800">Loading map...</p>
                 </div>
               )}
             </div>
