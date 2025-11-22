@@ -4,73 +4,73 @@ import re
 import json
 from dotenv import load_dotenv
 
-# Carregar variáveis de ambiente do arquivo .env
+# Load environment variables from .env file
 load_dotenv()
 
 class ChatbotNavegacao:
     def __init__(self):
-        # Configurar Google Gemini
+        # Configure Google Gemini
         api_key = os.getenv("GEMINI_API_KEY")
         
         try:
             genai.configure(api_key=api_key)
             self.model = genai.GenerativeModel('gemini-2.5-flash')
             self.use_ai = True
-            print("✅ Google Gemini AI ativado")
+            print("✅ Google Gemini AI activated")
         except Exception as e:
-            print(f"⚠️ Erro ao configurar Gemini: {e}")
-            print("📝 Usando modo regex simples.")
+            print(f"⚠️ Error configuring Gemini: {e}")
+            print("📝 Using simple regex mode.")
             self.model = None
             self.use_ai = False
         
-        # Prompt para Gemini
-        self.system_prompt = """Você é um assistente de navegação do campus Fanshawe College.
-Sua tarefa é identificar a ORIGEM e o DESTINO que o usuário menciona.
+        # Prompt for Gemini
+        self.system_prompt = """You are a navigation assistant for Fanshawe College campus.
+Your task is to identify the ORIGIN and DESTINATION that the user mentions.
 
-Prédios disponíveis: A, B, C, D, E, F, G, H, J, K, M, SC (Student Centre), T
+Available buildings: A, B, C, D, E, F, G, H, J, K, M, SC (Student Centre), T
 
-Extraia apenas as informações:
-- origem: letra do prédio onde o usuário está (ou null)
-- destino: letra do prédio para onde o usuário quer ir (ou null)
+Extract only the information:
+- origem: letter of the building where the user is (or null)
+- destino: letter of the building where the user wants to go (or null)
 
-Responda APENAS no formato JSON:
-{"origem": "A", "destino": "M", "resposta": "mensagem amigável"}
+Respond ONLY in JSON format:
+{"origem": "A", "destino": "M", "resposta": "friendly message"}
 
-Se não conseguir identificar origem ou destino, retorne null para esses campos."""
+If you can't identify origin or destination, return null for those fields."""
     
     def processar_mensagem(self, mensagem: str) -> dict:
-        """Processa mensagem e extrai intenção de navegação"""
+        """Process message and extract navigation intent"""
         
-        print(f"🔍 Processando mensagem: {mensagem}")
+        print(f"🔍 Processing message: {mensagem}")
         
-        # Primeiro verificar se é uma pergunta sobre informações de um prédio
+        # First check if it's a question about building information
         info_predio = self._verificar_info_predio(mensagem)
         if info_predio:
-            print(f"✓ Detectado pedido de informação de prédio: {info_predio}")
+            print(f"✓ Detected building information request: {info_predio}")
             return info_predio
         
         if self.use_ai and self.model:
             try:
-                # Usar Gemini para processar
-                prompt = f"{self.system_prompt}\n\nUsuário: {mensagem}"
+                # Use Gemini to process
+                prompt = f"{self.system_prompt}\n\nUser: {mensagem}"
                 response = self.model.generate_content(prompt)
                 resposta_texto = response.text
                 
-                # Extrair JSON da resposta
+                # Extract JSON from response
                 json_match = re.search(r'\{.*\}', resposta_texto, re.DOTALL)
                 if json_match:
                     dados = json.loads(json_match.group())
                     return {
                         "origem": dados.get("origem"),
                         "destino": dados.get("destino"),
-                        "resposta": dados.get("resposta", "Entendi sua solicitação!")
+                        "resposta": dados.get("resposta", "I understood your request!")
                     }
             except Exception as e:
-                print(f"Erro ao usar Gemini: {e}")
-                # Fallback para regex
+                print(f"Error using Gemini: {e}")
+                # Fallback to regex
         
-        # Modo fallback: usar regex simples
-        print("📝 Usando modo regex simples")
+        # Fallback mode: use simple regex
+        print("📝 Using simple regex mode")
         return self._processar_com_regex(mensagem)
     
     def _verificar_info_predio(self, mensagem: str) -> dict:
@@ -102,31 +102,31 @@ Se não conseguir identificar origem ou destino, retorne null para esses campos.
         return None
     
     def _processar_com_regex(self, mensagem: str) -> dict:
-        """Fallback usando regex para extrair origem e destino"""
+        """Fallback using regex to extract origin and destination"""
         msg = mensagem.lower()
         
-        # Dicionário de prédios
+        # Dictionary of buildings
         predios_validos = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'sc', 't']
         
         origem = None
         destino = None
         
-        # Padrão 1: "estou no/na [predio] X" (captura apenas letras de prédios válidos)
-        match_origem = re.search(r'(?:estou|tô|to)\s+(?:no|na|em)\s+(?:predio|prédio|building)?\s*([a-z]{1,2})\b', msg)
+        # Pattern 1: "I am at/in [building] X" (captures only valid building letters)
+        match_origem = re.search(r'(?:estou|tô|to|i am|i\'m at|at)\s+(?:no|na|em|in|at)?\s+(?:predio|prédio|building)?\s*([a-z]{1,2})\b', msg)
         if match_origem:
             candidato = match_origem.group(1).lower()
             if candidato in predios_validos:
                 origem = candidato.upper()
         
-        # Padrão 2: "quero ir no/na/para [predio] X"
-        match_destino = re.search(r'(?:ir|quero ir|vou|chegar)\s+(?:no|na|para|ao|à|em)\s+(?:predio|prédio|building)?\s*([a-z]{1,2})\b', msg)
+        # Pattern 2: "I want to go to/to [building] X"
+        match_destino = re.search(r'(?:ir|quero ir|vou|chegar|go|going|want to go|get to)\s+(?:no|na|para|ao|à|em|to)?\s+(?:predio|prédio|building)?\s*([a-z]{1,2})\b', msg)
         if match_destino:
             candidato = match_destino.group(1).lower()
             if candidato in predios_validos:
                 destino = candidato.upper()
         
-        # Padrão 3: "de X para/ate Y" (formato direto)
-        match_direto = re.search(r'\b([a-z]{1,2})\s+(?:para|ate|até)\s+(?:o\s+)?([a-z]{1,2})\b', msg)
+        # Pattern 3: "from X to Y" (direct format)
+        match_direto = re.search(r'\b([a-z]{1,2})\s+(?:para|ate|até|to)\s+(?:o\s+)?([a-z]{1,2})\b', msg)
         if match_direto:
             cand_origem = match_direto.group(1).lower()
             cand_destino = match_direto.group(2).lower()
@@ -135,29 +135,29 @@ Se não conseguir identificar origem ou destino, retorne null para esses campos.
             if cand_destino in predios_validos:
                 destino = cand_destino.upper()
         
-        # Padrão 4: Procurar letras isoladas com palavras-chave de contexto
-        # "estou no A" ou "ir para o B"
+        # Pattern 4: Look for isolated letters with context keywords
+        # "I am at A" or "go to B"
         if not origem:
-            match_origem_simples = re.search(r'(?:estou|tô)\s+(?:no|na|em)\s+([a-z]{1,2})\b', msg)
+            match_origem_simples = re.search(r'(?:estou|tô|i am|i\'m|at)\s+(?:no|na|em|at)?\s+([a-z]{1,2})\b', msg)
             if match_origem_simples:
                 candidato = match_origem_simples.group(1).lower()
                 if candidato in predios_validos:
                     origem = candidato.upper()
         
         if not destino:
-            match_destino_simples = re.search(r'(?:ir|vou)\s+(?:no|na|para|pro|pra)\s+([a-z]{1,2})\b', msg)
+            match_destino_simples = re.search(r'(?:ir|vou|go|going to)\s+(?:no|na|para|pro|pra|to)?\s+([a-z]{1,2})\b', msg)
             if match_destino_simples:
                 candidato = match_destino_simples.group(1).lower()
                 if candidato in predios_validos:
                     destino = candidato.upper()
         
-        resposta = "Como posso ajudá-lo com a navegação?"
+        resposta = "How can I help you with navigation?"
         if origem and destino:
-            resposta = f"✅ Pronto! Mostrando o caminho do prédio {origem} para o prédio {destino} no mapa."
+            resposta = f"✅ Done! Showing the path from building {origem} to building {destino} on the map."
         elif destino:
-            resposta = f"📍 Destino: prédio {destino}. De qual prédio você está saindo?"
+            resposta = f"📍 Destination: building {destino}. Which building are you leaving from?"
         elif origem:
-            resposta = f"📍 Origem: prédio {origem}. Para qual prédio deseja ir?"
+            resposta = f"📍 Origin: building {origem}. Which building would you like to go to?"
         
         return {
             "origem": origem,
@@ -165,5 +165,5 @@ Se não conseguir identificar origem ou destino, retorne null para esses campos.
             "resposta": resposta
         }
 
-# Instância global do chatbot
+# Global chatbot instance
 chatbot = ChatbotNavegacao()

@@ -9,24 +9,24 @@ from chatbot import chatbot
 
 app = FastAPI(title="Campus Guide API")
 
-# Configuração CORS para permitir frontend acessar o backend
+# CORS configuration to allow frontend to access backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, especifique os domínios
+    allow_origins=["*"],  # In production, specify the domains
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Servir imagens estáticas
+# Serve static images
 if os.path.exists("dados/imagens"):
     app.mount("/imagens", StaticFiles(directory="dados/imagens"), name="imagens")
 
-# Servir arquivos SVG
+# Serve SVG files
 if os.path.exists("dados/svg"):
     app.mount("/svg", StaticFiles(directory="dados/svg"), name="svg")
 
-# Carregar dados dos mapas
+# Load map data
 def carregar_mapas():
     try:
         with open("dados/mapas.json", "r", encoding="utf-8") as f:
@@ -34,7 +34,7 @@ def carregar_mapas():
     except FileNotFoundError:
         return {"campus": {"nome": "Campus", "predios": []}}
 
-# Carregar GeoJSON
+# Load GeoJSON
 def carregar_geojson():
     try:
         with open("dados/campus.geojson", "r", encoding="utf-8") as f:
@@ -45,7 +45,7 @@ def carregar_geojson():
 MAPAS_DATA = carregar_mapas()
 GEOJSON_DATA = carregar_geojson()
 
-# Carregar grafo de prédios
+# Load building graph
 def carregar_grafo_predios():
     try:
         grafo = GrafoPredios()
@@ -53,14 +53,14 @@ def carregar_grafo_predios():
         grafo.criar_conexoes_automaticas(distancia_maxima=250.0)
         return grafo
     except Exception as e:
-        print(f"Erro ao carregar grafo: {e}")
+        print(f"Error loading graph: {e}")
         return None
 
 GRAFO_PREDIOS = carregar_grafo_predios()
 
 MAPAS_DATA = carregar_mapas()
 
-# Modelos de dados
+# Data models
 class PerguntaChat(BaseModel):
     mensagem: str
     contexto: dict = {}
@@ -72,12 +72,12 @@ class RotaPrediosRequest(BaseModel):
     origem: str  # Ex: "A", "Building A"
     destino: str  # Ex: "M", "Building M"
 
-# ==================== ROTAS DA API ====================
+# ==================== API ROUTES ====================
 
 @app.get("/")
 def index():
     return {
-        "mensagem": "Campus Guide API funcionando!",
+        "mensagem": "Campus Guide API running!",
         "endpoints": {
             "mapas": "/api/mapas",
             "predios": "/api/predios",
@@ -89,17 +89,17 @@ def index():
 
 @app.get("/api/mapas")
 def obter_mapas():
-    """Retorna todos os dados dos mapas"""
+    """Returns all map data"""
     return MAPAS_DATA
 
 @app.get("/api/geojson")
 def obter_geojson():
-    """Retorna dados GeoJSON dos prédios"""
+    """Returns building GeoJSON data"""
     return GEOJSON_DATA
 
 @app.get("/api/predios")
 def listar_predios():
-    """Lista todos os prédios disponíveis"""
+    """Lists all available buildings"""
     predios = []
     for predio in MAPAS_DATA["campus"]["predios"]:
         predios.append({
@@ -112,24 +112,24 @@ def listar_predios():
 
 @app.get("/api/predios/{predio_id}")
 def obter_predio(predio_id: str):
-    """Retorna detalhes de um prédio específico"""
+    """Returns details of a specific building"""
     for predio in MAPAS_DATA["campus"]["predios"]:
         if predio["id"] == predio_id:
-            # Retorna com imagem_url formatada
+            # Return with formatted image_url
             predio_response = predio.copy()
             predio_response["imagem_url"] = f"/imagens/{os.path.basename(predio['imagem'])}"
             
-            # Adiciona URL do SVG se existir
+            # Add SVG URL if it exists
             svg_path = f"dados/svg/{predio['nome']}.svg"
             if os.path.exists(svg_path):
                 predio_response["svg_url"] = f"/svg/{predio['nome']}.svg"
             
             return predio_response
-    raise HTTPException(status_code=404, detail="Prédio não encontrado")
+    raise HTTPException(status_code=404, detail="Building not found")
 
 @app.post("/api/buscar")
 def buscar_local(busca: BuscaLocal):
-    """Busca locais por nome ou descrição"""
+    """Search locations by name or description"""
     termo = busca.termo.lower()
     resultados = []
     
@@ -149,40 +149,40 @@ def buscar_local(busca: BuscaLocal):
     return {"resultados": resultados, "total": len(resultados)}
 
 def formatar_info_predio(info):
-    """Formata informações do prédio em bullet points"""
+    """Format building information in bullet points"""
     linhas = []
     
-    # Título
+    # Title
     linhas.append(f"📍 {info['nome']}")
     linhas.append("")
     
-    # Descrição
+    # Description
     linhas.append(f"• {info['descricao']}")
     linhas.append("")
     
-    # Andares
+    # Floors
     if info.get('andares'):
         andares_str = ', '.join(map(str, info['andares']))
-        linhas.append(f"• 🏢 Andares: {andares_str}")
+        linhas.append(f"• 🏢 Floors: {andares_str}")
         linhas.append("")
     
-    # Facilidades
+    # Facilities
     if info.get('facilidades'):
-        linhas.append("• ✨ Facilidades disponíveis:")
+        linhas.append("• ✨ Available facilities:")
         for fac in info['facilidades']:
             linhas.append(f"  - {fac}")
         linhas.append("")
     
-    # Salas principais
+    # Main rooms
     if info.get('salas_principais') and len(info['salas_principais']) > 0:
-        linhas.append("• 🚪 Principais salas:")
+        linhas.append("• 🚪 Main rooms:")
         for sala in info['salas_principais']:
-            linhas.append(f"  - {sala['numero']}: {sala['tipo']} (Andar {sala['andar']})")
+            linhas.append(f"  - {sala['numero']}: {sala['tipo']} (Floor {sala['andar']})")
         linhas.append("")
     
-    # Horário
+    # Operating hours
     if info.get('horario_funcionamento'):
-        linhas.append(f"• 🕐 Horário de funcionamento:")
+        linhas.append(f"• 🕐 Operating hours:")
         linhas.append(f"  - {info['horario_funcionamento']}")
     
     return '\n'.join(linhas)
@@ -190,18 +190,18 @@ def formatar_info_predio(info):
 @app.post("/api/chat")
 def chat_endpoint(pergunta: PerguntaChat):
     """
-    Endpoint do chatbot - processa perguntas e retorna respostas usando Gemini
+    Chatbot endpoint - processes questions and returns responses using Gemini
     """
     mensagem = pergunta.mensagem
     
-    # Usar chatbot melhorado com Gemini
+    # Use enhanced chatbot with Gemini
     resultado = chatbot.processar_mensagem(mensagem)
     
-    # Se for uma requisição de informações de prédio
+    # If it's a building information request
     if resultado.get("tipo") == "info_predio":
         predio_ref = resultado.get("predio_ref")
         
-        # Buscar informações do prédio
+        # Search for building information
         import json
         import os
         
@@ -214,7 +214,7 @@ def chat_endpoint(pergunta: PerguntaChat):
             if predio_ref in predios_info:
                 info = predios_info[predio_ref]
                 
-                # Formatar resposta em bullet points
+                # Format response in bullet points
                 texto = formatar_info_predio(info)
                 
                 return {
@@ -225,18 +225,18 @@ def chat_endpoint(pergunta: PerguntaChat):
                 }
             else:
                 return {
-                    "resposta": f"Desculpe, não tenho informações detalhadas sobre o prédio {predio_ref} no momento. Você pode me perguntar sobre a localização ou rotas para este prédio.",
+                    "resposta": f"Sorry, I don't have detailed information about building {predio_ref} at the moment. You can ask me about the location or routes to this building.",
                     "tipo": "info_predio",
                     "predio_ref": predio_ref
                 }
         except Exception as e:
-            print(f"Erro ao carregar informações do prédio: {e}")
+            print(f"Error loading building information: {e}")
             return {
-                "resposta": f"Ocorreu um erro ao buscar informações do prédio {predio_ref}. Tente novamente.",
+                "resposta": f"An error occurred while fetching information for building {predio_ref}. Please try again.",
                 "tipo": "erro"
             }
     
-    # Resposta normal de navegação
+    # Normal navigation response
     return {
         "resposta": resultado["resposta"],
         "origem": resultado.get("origem"),
@@ -246,55 +246,55 @@ def chat_endpoint(pergunta: PerguntaChat):
 
 def processar_pergunta_chatbot(mensagem: str):
     """
-    Processa perguntas do usuário de forma simples
-    TODO: Integrar com OpenAI ou Google Gemini para respostas melhores
+    Process user questions in a simple way
+    TODO: Integrate with OpenAI or Google Gemini for better responses
     """
     
-    # Saudações
-    if any(palavra in mensagem for palavra in ["oi", "olá", "ola", "hello"]):
+    # Greetings
+    if any(palavra in mensagem for palavra in ["oi", "olá", "ola", "hello", "hi"]):
         return {
-            "resposta": "Olá! Sou o assistente do Campus Guide. Como posso te ajudar a encontrar um local?",
+            "resposta": "Hello! I'm the Campus Guide assistant. How can I help you find a location?",
             "acao": None
         }
     
-    # Busca por "onde fica" ou "como chego"
-    if "onde fica" in mensagem or "onde é" in mensagem or "como chego" in mensagem:
-        # Tenta extrair o local mencionado
+    # Search for "where is" or "how do I get to"
+    if "onde fica" in mensagem or "onde é" in mensagem or "como chego" in mensagem or "where is" in mensagem or "how do I get" in mensagem:
+        # Try to extract the mentioned location
         resultados = buscar_em_texto(mensagem)
         
         if resultados:
             local = resultados[0]
             return {
-                "resposta": f"Encontrei {local['local']} no {local['predio']}. Vou destacar no mapa para você!",
+                "resposta": f"I found {local['local']} in {local['predio']}. I'll highlight it on the map for you!",
                 "acao": "mostrar_no_mapa",
                 "dados": local
             }
         else:
             return {
-                "resposta": "Não encontrei esse local. Pode me dar mais detalhes? Por exemplo: 'Onde fica a sala 101?'",
+                "resposta": "I couldn't find that location. Can you give me more details? For example: 'Where is room 101?'",
                 "acao": None
             }
     
-    # Lista de prédios
-    if "prédios" in mensagem or "predios" in mensagem or "quais prédios" in mensagem:
+    # List of buildings
+    if "prédios" in mensagem or "predios" in mensagem or "quais prédios" in mensagem or "buildings" in mensagem or "which buildings" in mensagem:
         predios = [p["nome"] for p in MAPAS_DATA["campus"]["predios"]]
         return {
-            "resposta": f"Temos {len(predios)} prédios no campus: {', '.join(predios)}",
+            "resposta": f"We have {len(predios)} buildings on campus: {', '.join(predios)}",
             "acao": None
         }
     
-    # Ajuda
+    # Help
     if "ajuda" in mensagem or "help" in mensagem:
         return {
-            "resposta": """Posso te ajudar a encontrar locais no campus! 
+            "resposta": """I can help you find locations on campus! 
             
-Exemplos de perguntas:
-• "Onde fica a sala 101?"
-• "Como chego ao laboratório de química?"
-• "Quais prédios existem?"
-• "Onde é a biblioteca?"
+Example questions:
+• "Where is room 101?"
+• "How do I get to the chemistry lab?"
+• "Which buildings exist?"
+• "Where is the library?"
 
-Me pergunte qualquer coisa sobre localização no campus!""",
+Ask me anything about campus locations!""",
             "acao": None
         }
     

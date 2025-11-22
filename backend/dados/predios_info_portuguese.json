@@ -1,0 +1,187 @@
+{
+  "A": {
+    "nome": "Building A",
+    "ref": "A",
+    "andares": [1, 2, 3],
+    "descricao": "Prédio principal de administração e salas de aula",
+    "facilidades": [
+      "Salas de Aula",
+      "Escritórios Administrativos",
+      "Banheiros",
+      "Elevadores"
+    ],
+    "salas_principais": [
+      {"numero": "A101", "tipo": "Sala de Aula", "andar": 1},
+      {"numero": "A102", "tipo": "Sala de Aula", "andar": 1},
+      {"numero": "A201", "tipo": "Laboratório", "andar": 2},
+      {"numero": "A301", "tipo": "Escritório", "andar": 3}
+    ],
+    "horario_funcionamento": "Segunda a Sexta: 7h - 22h"
+  },
+  "B": {
+    "nome": "Building B",
+    "ref": "B",
+    "andares": [1, 2],
+    "descricao": "Prédio de tecnologia e laboratórios",
+    "facilidades": [
+      "Laboratórios de Computação",
+      "Salas de Aula",
+      "Banheiros"
+    ],
+    "salas_principais": [
+      {"numero": "B101", "tipo": "Laboratório de Computação", "andar": 1},
+      {"numero": "B102", "tipo": "Laboratório de Computação", "andar": 1},
+      {"numero": "B201", "tipo": "Sala de Aula", "andar": 2}
+    ],
+    "horario_funcionamento": "Segunda a Sexta: 8h - 20h"
+  },
+  "C": {
+    "nome": "Building C",
+    "ref": "C",
+    "andares": [1, 2],
+    "descricao": "Prédio acadêmico com salas de aula",
+    "facilidades": [
+      "Salas de Aula",
+      "Banheiros",
+      "Sala de Estudos"
+    ],
+    "salas_principais": [],
+    "horario_funcionamento": "Segunda a Sexta: 7h - 22h"
+  },
+  "D": {
+    "nome": "Building D",
+    "ref": "D",
+    "andares": [1],
+    "descricao": "Prédio de artes e design",
+    "facilidades": [
+      "Estúdios de Arte",
+      "Salas de Design",
+      "Galeria"
+    ],
+    "salas_principais": [],
+    "horario_funcionamento": "Segunda a Sexta: 8h - 20h"
+  },
+  "E": {
+    "nome": "Building E",
+    "ref": "E",
+    "andares": [1, 2],
+    "descricao": "Prédio de engenharia",
+    "facilidades": [
+      "Laboratórios de Engenharia",
+      "Oficinas",
+      "Salas de Projeto"
+    ],
+    "salas_principais": [],
+    "horario_funcionamento": "Segunda a Sexta: 7h - 22h"
+  },
+  "F": {
+    "nome": "F Building",
+    "ref": "F",
+    "andares": [1, 2],
+    "descricao": "Prédio de ciências da saúde",
+    "facilidades": [
+      "Laboratórios de Saúde",
+      "Clínica de Treinamento",
+      "Salas de Simulação"
+    ],
+    "salas_principais": [],
+    "horario_funcionamento": "Segunda a Sexta: 7h - 21h"
+  },
+  "G": {
+    "nome": "Building G",
+    "ref": "G",
+    "andares": [1, 2],
+    "descricao": "Prédio de negócios",
+    "facilidades": [
+      "Salas de Aula",
+      "Auditório",
+      "Sala de Conferências"
+    ],
+    "salas_principais": [],
+    "horario_funcionamento": "Segunda a Sexta: 7h - 22h"
+  },
+  "H": {
+    "nome": "Building H",
+    "ref": "H",
+    "andares": [1, 2],
+    "descricao": "Prédio de hospitalidade e turismo",
+    "facilidades": [
+      "Cozinha de Treinamento",
+      "Restaurante de Estudantes",
+      "Salas de Aula"
+    ],
+    "salas_principais": [],
+    "horario_funcionamento": "Segunda a Sexta: 7h - 21h"
+  },
+  "J": {
+    "nome": "Building J",
+    "ref": "J",
+    "andares": [1, 2, 3],
+    "descricao": "Prédio de comunicação e mídia",
+    "facilidades": [
+      "Estúdios de TV",
+      "Estúdios de Rádio",
+      "Laboratórios de Edição"
+    ],
+    "salas_principais": [],
+    "horario_funcionamento": "Segunda a Sexta: 8h - 22h"
+  },
+  "K": {
+    "nome": "Building K",
+    "ref": "K",
+    "andares": [1, 2],
+    "descricao": "Prédio de automação e mecânica",
+    "facilidades": [
+      "Oficinas",
+      "Laboratórios de Automação",
+      "Garagem de Treinamento"
+    ],
+    "salas_principais": [],
+    "horario_funcionamento": "Segunda a Sexta: 7h - 20h"
+  },
+  "M": {
+    "nome": "Building M",
+    "ref": "M",
+    "andares": [1, 2, 3],
+    "descricao": "Prédio de ciências aplicadas",
+    "facilidades": [
+      "Laboratórios Científicos",
+      "Salas de Aula",
+      "Biblioteca de Referência"
+    ],
+    "salas_principais": [],
+    "horario_funcionamento": "Segunda a Sexta: 7h - 22h"
+  },
+  "SC": {
+    "nome": "Student Centre",
+    "ref": "SC",
+    "andares": [1, 2],
+    "descricao": "Centro estudantil com serviços e lazer",
+    "facilidades": [
+      "Cafeteria",
+      "Livraria",
+      "Ginásio",
+      "Sala de Jogos",
+      "Serviços Estudantis"
+    ],
+    "salas_principais": [
+      {"numero": "SC100", "tipo": "Cafeteria", "andar": 1},
+      {"numero": "SC101", "tipo": "Livraria", "andar": 1},
+      {"numero": "SC200", "tipo": "Ginásio", "andar": 2}
+    ],
+    "horario_funcionamento": "Segunda a Sexta: 7h - 23h, Sábado e Domingo: 9h - 20h"
+  },
+  "T": {
+    "nome": "Building T",
+    "ref": "T",
+    "andares": [1, 2, 3],
+    "descricao": "Prédio de tecnologia avançada",
+    "facilidades": [
+      "Laboratórios de TI",
+      "Salas de Inovação",
+      "Data Center"
+    ],
+    "salas_principais": [],
+    "horario_funcionamento": "Segunda a Sexta: 7h - 22h"
+  }
+}
