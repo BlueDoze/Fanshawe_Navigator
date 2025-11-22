@@ -27,6 +27,7 @@ export default function FanshaweNavigator() {
   const [originBuilding, setOriginBuilding] = useState(null);
   const [destBuilding, setDestBuilding] = useState(null);
   const [buildingInfo, setBuildingInfo] = useState(null);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const messagesEndRef = useRef(null);
 
   const API_URL = 'http://localhost:8000';
@@ -226,7 +227,11 @@ export default function FanshaweNavigator() {
   return (
     <div className="flex h-screen bg-fanshawe-cream text-gray-800">
       {/* Sidebar */}
-      <div className="w-64 bg-[#d4d6ce] border-r border-gray-300 flex flex-col">
+      <div 
+        className={`w-64 bg-[#d4d6ce] border-r border-gray-300 flex flex-col fixed left-0 top-0 h-full transition-transform duration-300 ease-in-out z-20 ${
+          sidebarVisible ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div className="p-4 border-b border-gray-300">
           <div className="flex items-center justify-center mb-4">
             <img 
@@ -276,7 +281,9 @@ export default function FanshaweNavigator() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
+        sidebarVisible ? 'ml-64' : 'ml-0'
+      }`}>
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 bg-fanshawe-cream relative">
           {/* Watermark background */}
@@ -326,6 +333,13 @@ export default function FanshaweNavigator() {
         {/* Input Area */}
         <div className="border-t border-gray-300 p-4 bg-fanshawe-cream">
           <div className="max-w-3xl mx-auto flex gap-3">
+            <button
+              onClick={() => setSidebarVisible(!sidebarVisible)}
+              className="bg-fanshawe-red-dark hover:bg-fanshawe-red p-3 rounded-lg transition-colors flex-shrink-0"
+              aria-label="Toggle Menu"
+            >
+              <MessageSquare className="text-white" size={20} />
+            </button>
             <input
               type="text"
               value={input}
