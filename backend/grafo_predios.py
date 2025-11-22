@@ -1,6 +1,6 @@
 """
-Sistema de navegação entre prédios do campus
-Cria grafo de conexões entre prédios e calcula rotas
+Campus building navigation system
+Creates connection graph between buildings and calculates routes
 """
 
 import json
@@ -10,33 +10,33 @@ from pathlib import Path
 
 class GrafoPredios:
     """
-    Grafo de navegação entre prédios do campus
+    Campus building navigation graph
     """
     
     def __init__(self):
         self.predios = {}  # {id: {nome, ref, coords, centroide}}
         self.conexoes = []  # [(predio1, predio2, distancia)]
-        self.vizinhos = {}  # {predio_id: [predio_ids conectados]}
+        self.vizinhos = {}  # {predio_id: [connected predio_ids]}
     
     def carregar_geojson(self, caminho_geojson: str):
         """
-        Carrega prédios do GeoJSON e calcula centroides
+        Load buildings from GeoJSON and calculate centroids
         """
         with open(caminho_geojson, 'r', encoding='utf-8') as f:
             geojson = json.load(f)
         
-        print("🏢 Carregando prédios do GeoJSON...")
+        print("🏢 Loading buildings from GeoJSON...")
         
         for feature in geojson.get('features', []):
             props = feature.get('properties', {})
             geom = feature.get('geometry', {})
             
-            # Filtrar apenas prédios college
+            # Filter only college buildings
             if props.get('building') == 'college':
                 nome = props.get('name', 'Sem nome')
                 ref = props.get('ref', nome)
                 
-                # Calcular centroide
+                # Calculate centroid
                 if geom.get('type') == 'Polygon':
                     coords = geom.get('coordinates', [[]])[0]
                     centroide = self._calcular_centroide(coords)
@@ -53,20 +53,20 @@ class GrafoPredios:
                     
                     self.vizinhos[predio_id] = []
         
-        print(f"   ✅ {len(self.predios)} prédios carregados")
+        print(f"   ✅ {len(self.predios)} buildings loaded")
         
-        # Listar prédios
+        # List buildings
         for pid, info in sorted(self.predios.items()):
             print(f"      - {info['ref']}: {info['nome']}")
     
     def _calcular_centroide(self, coords: List[List[float]]) -> Tuple[float, float]:
         """
-        Calcula o centroide de um polígono
+        Calculate the centroid of a polygon
         """
         if not coords:
             return (0, 0)
         
-        # Média das coordenadas
+        # Average of coordinates
         lngs = [c[0] for c in coords]
         lats = [c[1] for c in coords]
         
@@ -75,22 +75,22 @@ class GrafoPredios:
     def _distancia_haversine(self, coord1: Tuple[float, float], 
                             coord2: Tuple[float, float]) -> float:
         """
-        Calcula distância entre dois pontos geográficos (em metros)
-        Fórmula de Haversine
+        Calculate distance between two geographic points (in meters)
+        Haversine formula
         """
         lon1, lat1 = coord1
         lon2, lat2 = coord2
         
-        # Raio da Terra em metros
+        # Earth radius in meters
         R = 6371000
         
-        # Converter para radianos
+        # Convert to radians
         phi1 = math.radians(lat1)
         phi2 = math.radians(lat2)
         delta_phi = math.radians(lat2 - lat1)
         delta_lambda = math.radians(lon2 - lon1)
         
-        # Fórmula de Haversine
+        # Haversine formula
         a = math.sin(delta_phi/2)**2 + \
             math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda/2)**2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
@@ -99,12 +99,12 @@ class GrafoPredios:
     
     def criar_conexoes_automaticas(self, distancia_maxima: float = 200.0):
         """
-        Cria conexões automáticas entre prédios próximos
+        Create automatic connections between nearby buildings
         
         Args:
-            distancia_maxima: Distância máxima em metros para conexão
+            distancia_maxima: Maximum distance in meters for connection
         """
-        print(f"\n🔗 Criando conexões entre prédios (distância máx: {distancia_maxima}m)...")
+        print(f"\n🔗 Creating connections between buildings (max distance: {distancia_maxima}m)...")
         
         predios_ids = list(self.predios.keys())
         conexoes_criadas = 0
@@ -115,27 +115,27 @@ class GrafoPredios:
             for pid2 in predios_ids[i+1:]:
                 p2 = self.predios[pid2]
                 
-                # Calcular distância entre centroides
+                # Calculate distance between centroids
                 dist = self._distancia_haversine(p1['centroide'], p2['centroide'])
                 
-                # Se estiverem próximos, criar conexão
+                # If they are close, create connection
                 if dist <= distancia_maxima:
                     self.conexoes.append((pid1, pid2, dist))
                     self.vizinhos[pid1].append(pid2)
                     self.vizinhos[pid2].append(pid1)
                     conexoes_criadas += 1
         
-        print(f"   ✅ {conexoes_criadas} conexões criadas")
+        print(f"   ✅ {conexoes_criadas} connections created")
     
     def adicionar_conexao_manual(self, predio1: str, predio2: str):
         """
-        Adiciona conexão manual entre dois prédios
+        Add manual connection between two buildings
         """
         pid1 = predio1.lower().replace(' ', '_')
         pid2 = predio2.lower().replace(' ', '_')
         
         if pid1 not in self.predios or pid2 not in self.predios:
-            print(f"   ⚠️  Prédio não encontrado: {predio1} ou {predio2}")
+            print(f"   ⚠️  Building not found: {predio1} or {predio2}")
             return False
         
         p1 = self.predios[pid1]
@@ -153,16 +153,16 @@ class GrafoPredios:
     
     def calcular_rota(self, origem: str, destino: str) -> Optional[Dict]:
         """
-        Calcula rota entre dois prédios usando A*
+        Calculate route between two buildings using A*
         
         Args:
-            origem: Referência do prédio de origem (ex: "A", "Building A")
-            destino: Referência do prédio de destino (ex: "M", "Building M")
+            origem: Origin building reference (e.g.: "A", "Building A")
+            destino: Destination building reference (e.g.: "M", "Building M")
         
         Returns:
-            Dicionário com informações da rota ou None
+            Dictionary with route information or None
         """
-        # Normalizar IDs
+        # Normalize IDs
         origem_id = self._normalizar_id_predio(origem)
         destino_id = self._normalizar_id_predio(destino)
         
@@ -170,10 +170,10 @@ class GrafoPredios:
             return None
         
         if origem_id not in self.predios or destino_id not in self.predios:
-            print(f"   ❌ Prédio não encontrado: {origem} ou {destino}")
+            print(f"   ❌ Building not found: {origem} or {destino}")
             return None
         
-        print(f"\n🎯 Calculando rota: {self.predios[origem_id]['ref']} → {self.predios[destino_id]['ref']}")
+        print(f"\n🎯 Calculating route: {self.predios[origem_id]['ref']} → {self.predios[destino_id]['ref']}")
         
         # A* pathfinding
         import heapq
@@ -184,15 +184,15 @@ class GrafoPredios:
                 self.predios[pid2]['centroide']
             )
         
-        # Fila de prioridade
+        # Priority queue
         contador = 0
         abertos = [(0, contador, origem_id)]
         
-        # Custos
+        # Costs
         g_score = {origem_id: 0}
         f_score = {origem_id: heuristica(origem_id, destino_id)}
         
-        # Rastreamento
+        # Tracking
         veio_de = {}
         conjunto_fechados = set()
         

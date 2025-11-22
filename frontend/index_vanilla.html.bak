@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Guide - Navigate the Campus</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            background: #f0f2f5;
+        }
+
+        /* Mapa Interativo */
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Painel do Chat */
+        #chat-panel {
+            width: 400px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            border-left: 2px solid #ddd;
+        }
+
+        #chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #chat-header h2 {
+            margin-bottom: 5px;
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: slideIn 0.3s ease;
+            line-height: 1.6;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            background: #667eea;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .message.bot {
+            background: #f0f2f5;
+            color: #333;
+            align-self: flex-start;
+            white-space: pre-wrap;
+        }
+        
+        .message.bot strong {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        #chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #ddd;
+        }
+
+        #chat-input-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #chat-input:focus {
+            border-color: #667eea;
+        }
+
+        #send-button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        #send-button:hover {
+            transform: scale(1.05);
+        }
+
+        #send-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Controles do Mapa */
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 320px;
+        }
+        
+        .nav-predio-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 280px;
+        }
+        
+        .nav-predio-controls h3 {
+            margin: 0 0 15px 0;
+            color: #667eea;
+            font-size: 16px;
+        }
+        
+        .nav-group {
+            margin-bottom: 15px;
+        }
+        
+        .nav-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .nav-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .nav-group select:focus {
+            border-color: #667eea;
+        }
+        
+        .btn-calcular-rota {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn-calcular-rota:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-limpar-rota {
+            width: 100%;
+            padding: 10px;
+            background: #f0f2f5;
+            color: #666;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .rota-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f2f5;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+        }
+        
+        .rota-info.visible {
+            display: block;
+        }
+        
+        .rota-info h4 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+            font-size: 14px;
+        }
+        
+        .rota-info p {
+            margin: 5px 0;
+            color: #333;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .map-controls select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .map-controls select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .btn-tracar-rota {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+
+        .btn-tracar-rota:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-tracar-rota:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-limpar-rota {
+            width: 100%;
+            padding: 8px;
+            background: #f0f2f5;
+            color: #666;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-limpar-rota:hover {
+            background: #e4e6eb;
+        }
+
+        /* Marcador de Local */
+        .location-marker {
+            background: #667eea;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .location-marker.origin {
+            background: #28a745;
+        }
+
+        .location-marker.destination {
+            background: #dc3545;
+        }
+        
+        /* Botão para voltar ao mapa geral */
+        .btn-voltar-mapa {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            padding: 12px 20px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 25px;
+            color: #667eea;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s;
+            display: none;
+        }
+        
+        .btn-voltar-mapa:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-voltar-mapa.visible {
+            display: block;
+        }
+
+        /* Responsivo Mobile */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            #map-container {
+                height: 50%;
+            }
+
+            #chat-panel {
+                width: 100%;
+                height: 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mapa Interativo -->
+    <div id="map-container">
+        <button id="limpar-rota-predios" class="btn-limpar-rota" style="position: absolute; top: 20px; right: 20px; z-index: 1000; padding: 12px 24px; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: none;">
+            🗑️ Clear Route
+        </button>
+        
+        <button id="voltar-mapa-btn" class="btn-voltar-mapa">
+            🗺️ Voltar ao Mapa Geral
+        </button>
+        
+        <!-- Selects escondidos para compatibilidade -->
+        <select id="predio-origem" style="display: none;"></select>
+        <select id="predio-destino" style="display: none;"></select>
+        
+        <div id="map"></div>
+    </div>
+
+    <!-- Painel do Chat -->
+    <div id="chat-panel">
+        <div id="chat-header">
+            <h2>Campus Guide</h2>
+            <p>Seu assistente de navegação</p>
+        </div>
+        <div id="chat-messages">
+            <div class="message bot">
+                Olá! Sou o assistente do Campus Guide. Como posso te ajudar a encontrar um local no campus?
+            </div>
+        </div>
+        <div id="chat-input-container">
+            <form id="chat-input-form">
+                <input 
+                    type="text" 
+                    id="chat-input" 
+                    placeholder="Pergunte algo... Ex: Onde fica a sala 101?"
+                    autocomplete="off"
+                >
+                <button type="submit" id="send-button">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Configuração da API
+        const API_URL = 'http://localhost:8000';
+
+        // Estado da aplicação
+        let mapaAtual = null;
+        let marcadores = [];
+        let prediosData = [];
+        let linhaRota = null;
+        let marcadoresRota = [];
+        let geojsonLayer = null;
+        let svgOverlay = null;
+        let modoPlantaInterna = false;
+        let marcadoresPredios = {}; // Armazenar marcadores coloridos de cada prédio
+
+        // Inicializar mapa Leaflet com coordenadas geográficas (como Google Maps)
+        const map = L.map('map', {
+            center: [43.0125, -81.2002],  // Centro da Fanshawe College
+            zoom: 16,
+            minZoom: 14,
+            maxZoom: 20
+        });
+
+        // Adicionar camada de tiles (mapa base estilo Google Maps)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 20
+        }).addTo(map);
+
+        // Carregar GeoJSON dos prédios
+        async function carregarGeoJSON() {
+            try {
+                const response = await fetch(`${API_URL}/api/geojson`);
+                const geojson = await response.json();
+                
+                // Renderizar GeoJSON no mapa (prédios da universidade)
+                geojsonLayer = L.geoJSON(geojson, {
+                    style: (feature) => {
+                        // Estilo diferenciado por tipo de prédio
+                        const isCollege = feature.properties.building === 'college';
+                        return {
+                            color: isCollege ? '#667eea' : '#95a5a6',
+                            weight: isCollege ? 3 : 2,
+                            fillOpacity: isCollege ? 0.3 : 0.1,
+                            fillColor: isCollege ? '#764ba2' : '#bdc3c7'
+                        };
+                    },
+                    onEachFeature: (feature, layer) => {
+                        const props = feature.properties;
+                        const nome = props.name || props.nome || 'Edifício sem nome';
+                        const ref = props.ref ? ` (${props.ref})` : '';
+                        const tipo = props.building || 'Edifício';
+                        
+                        // Destaque ao passar o mouse
+                        layer.on('mouseover', function() {
+                            this.setStyle({
+                                weight: 5,
+                                fillOpacity: 0.5
+                            });
+                        });
+                        
+                        layer.on('mouseout', function() {
+                            geojsonLayer.resetStyle(this);
+                        });
+                        
+                        // Adicionar evento de clique para mostrar informações
+                        if (props.ref) {
+                            layer.on('click', async function() {
+                                console.log(`🖱️ Clique no prédio ${props.ref}`);
+                                await mostrarInfoPredioNoChat(props.ref);
+                            });
+                            
+                            // Armazenar layer para atualização de cores
+                            marcadoresPredios[props.ref] = layer;
+                        }
+                    }
+                }).addTo(map);
+                
+                // Ajusta a visualização para mostrar todos os prédios da universidade
+                if (geojson.features.length > 0) {
+                    map.fitBounds(geojsonLayer.getBounds(), { padding: [50, 50] });
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar GeoJSON:', error);
+            }
+        }
+        
+
+        
+        // Mostrar informações do prédio no chat ao clicar no marcador
+        async function mostrarInfoPredioNoChat(ref) {
+            try {
+                const response = await fetch(`${API_URL}/api/predios/${ref}/info`);
+                const data = await response.json();
+                
+                if (data.texto_formatado) {
+                    adicionarMensagemBot(data.texto_formatado);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar informações do prédio:', error);
+                adicionarMensagemBot(`Erro ao buscar informações do prédio ${ref}.`);
+            }
+        }
+        
+        // Atualizar cor dos prédios (verde para origem, vermelho para destino)
+        function atualizarMarcadoresPredios(origem, destino) {
+            console.log(`🎨 Atualizando cores dos prédios - Origem: ${origem}, Destino: ${destino}`);
+            console.log(`📦 Prédios disponíveis:`, Object.keys(marcadoresPredios));
+            
+            // Resetar estilo de todos os prédios
+            Object.keys(marcadoresPredios).forEach(ref => {
+                if (geojsonLayer) {
+                    geojsonLayer.resetStyle(marcadoresPredios[ref]);
+                }
+            });
+            
+            // Destacar origem (verde)
+            if (origem && marcadoresPredios[origem]) {
+                console.log(`🟢 Marcando origem: ${origem}`);
+                marcadoresPredios[origem].setStyle({
+                    fillColor: '#27ae60',
+                    fillOpacity: 0.7,
+                    weight: 4
+                });
+            }
+            
+            // Destacar destino (vermelho)
+            if (destino && marcadoresPredios[destino]) {
+                console.log(`🔴 Marcando destino: ${destino}`);
+                marcadoresPredios[destino].setStyle({
+                    fillColor: '#e74c3c',
+                    fillOpacity: 0.7,
+                    weight: 4
+                });
+            }
+        }
+
+        // Carregar dados dos prédios (DESABILITADO - não usado mais)
+        async function carregarPredios() {
+            // Função antiga removida - agora usamos carregarPrediosDisponiveis()
+            return;
+            /*
+            try {
+                const response = await fetch(`${API_URL}/api/predios`);
+                const data = await response.json();
+                prediosData = data.predios;
+                
+                const select = document.getElementById('predio-select');
+                select.innerHTML = '<option value="">Selecione um prédio</option>';
+                
+                prediosData.forEach(predio => {
+                    const option = document.createElement('option');
+                    option.value = predio.id;
+                    option.textContent = predio.nome;
+                    select.appendChild(option);
+                });
+
+                // Carregar primeiro prédio automaticamente
+                if (prediosData.length > 0) {
+                    select.value = prediosData[0].id;
+                    carregarMapaPredio(prediosData[0].id);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar prédios:', error);
+                adicionarMensagemBot('⚠️ Erro ao conectar com o servidor. Verifique se o backend está rodando.');
+            }
+            */
+        }
+
+        // Função global para ver detalhes do prédio
+        window.verDetalhesPredi = function(predioId) {
+            carregarMapaPredio(predioId);
+        };
+        
+        // Carregar mapa de um prédio específico (planta interna)
+        async function carregarMapaPredio(predioId) {
+            try {
+                const response = await fetch(`${API_URL}/api/predios/${predioId}`);
+                if (!response.ok) {
+                    adicionarMensagemBot('⚠️ Planta interna ainda não disponível para este prédio.');
+                    return;
+                }
+                
+                const predio = await response.json();
+                
+                // Clear old markers
+                marcadores.forEach(m => map.removeLayer(m));
+                marcadores = [];
+
+                // Remover camada de imagem antiga
+                if (mapaAtual) {
+                    map.removeLayer(mapaAtual);
+                }
+                
+                // Remover SVG overlay antigo
+                if (svgOverlay) {
+                    map.removeLayer(svgOverlay);
+                    svgOverlay = null;
+                }
+
+                // Encontrar o prédio no GeoJSON para pegar as coordenadas geográficas
+                let predioGeoJSON = null;
+                if (geojsonLayer) {
+                    geojsonLayer.eachLayer((layer) => {
+                        const props = layer.feature.properties;
+                        if (props.predio_id === predioId || props.name === predioId) {
+                            predioGeoJSON = layer;
+                        }
+                    });
+                }
+                
+                // Se encontrou o prédio, usar seus bounds geográficos
+                if (predioGeoJSON) {
+                    const bounds = predioGeoJSON.getBounds();
+                    
+                    // Adicionar imagem do mapa sobreposta ao prédio
+                    mapaAtual = L.imageOverlay(
+                        `${API_URL}${predio.imagem_url}`,
+                        bounds,
+                        { opacity: 0.8 }
+                    ).addTo(map);
+
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                    
+                    // Ativar modo planta interna
+                    modoPlantaInterna = true;
+                    document.getElementById('voltar-mapa-btn').classList.add('visible');
+                    
+                    adicionarMensagemBot(`📍 Mostrando planta interna: ${predio.nome}`);
+                    
+                    // Carregar SVG overlay se disponível
+                    if (predio.svg_url) {
+                        carregarSVGOverlay(predio.svg_url, bounds);
+                    }
+
+                    // Adicionar marcadores dos locais usando coordenadas geográficas
+                    predio.locais.forEach(local => {
+                        // Converter coordenadas pixel para lat/lng
+                        const latLng = pixelParaLatLng(
+                            local.coordenadas.x, 
+                            local.coordenadas.y,
+                            predio.dimensoes,
+                            bounds
+                        );
+                        
+                        const marker = L.marker(latLng, {
+                            icon: L.divIcon({
+                                className: 'location-marker',
+                                html: local.nome
+                            })
+                        }).addTo(map);
+
+                        marker.bindPopup(`
+                            <strong>${local.nome}</strong><br>
+                            ${local.descricao || ''}
+                        `);
+
+                        marcadores.push(marker);
+                    });
+
+                    // Atualizar seletores de origem e destino
+                    atualizarSeletoresLocais(predioId, predio.locais);
+                } else {
+                    adicionarMensagemBot('⚠️ Não foi possível localizar este prédio no mapa.');
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar mapa:', error);
+                adicionarMensagemBot('Erro ao carregar planta interna do prédio.');
+            }
+        }
+        
+        // Converter coordenadas pixel para lat/lng
+        function pixelParaLatLng(pixelX, pixelY, dimensoes, bounds) {
+            // Normalizar coordenadas (0-1)
+            const normX = pixelX / dimensoes.largura;
+            const normY = pixelY / dimensoes.altura;
+            
+            // Interpolar entre os bounds geográficos
+            const latMin = bounds.getSouth();
+            const latMax = bounds.getNorth();
+            const lngMin = bounds.getWest();
+            const lngMax = bounds.getEast();
+            
+            // Y é invertido (pixel Y cresce para baixo, lat cresce para cima)
+            const lat = latMax - (normY * (latMax - latMin));
+            const lng = lngMin + (normX * (lngMax - lngMin));
+            
+            return [lat, lng];
+        }
+        
+        // Carregar SVG overlay sobre a imagem
+        async function carregarSVGOverlay(svgUrl, bounds) {
+            try {
+                const response = await fetch(`${API_URL}${svgUrl}`);
+                const svgText = await response.text();
+                
+                const parser = new DOMParser();
+                const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+                const svgElement = svgDoc.documentElement;
+                
+                // Criar overlay SVG
+                svgOverlay = L.svgOverlay(svgElement, bounds, {
+                    interactive: true,
+                    opacity: 0.7
+                }).addTo(map);
+                
+                // Adicionar interatividade aos elementos do SVG
+                adicionarInteratividadeSVG(svgElement);
+                
+            } catch (error) {
+                console.error('Erro ao carregar SVG overlay:', error);
+            }
+        }
+        
+        // Adicionar eventos de clique aos elementos do SVG
+        function adicionarInteratividadeSVG(svgElement) {
+            // Tornar salas clicáveis
+            const salas = svgElement.querySelectorAll('[id^="sala_"], [class*="room"]');
+            salas.forEach(sala => {
+                sala.style.cursor = 'pointer';
+                sala.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const salaId = sala.id || sala.getAttribute('class');
+                    adicionarMensagemBot(`Você clicou em: ${salaId}`);
+                    
+                    // Destacar a sala
+                    sala.style.fill = '#667eea';
+                    sala.style.fillOpacity = '0.3';
+                    
+                    setTimeout(() => {
+                        sala.style.fill = '';
+                        sala.style.fillOpacity = '';
+                    }, 2000);
+                });
+                
+                sala.addEventListener('mouseenter', () => {
+                    sala.style.strokeWidth = '4';
+                    sala.style.stroke = '#667eea';
+                });
+                
+                sala.addEventListener('mouseleave', () => {
+                    sala.style.strokeWidth = '';
+                    sala.style.stroke = '';
+                });
+            });
+        }
+
+        // Atualizar seletores de origem e destino
+        function atualizarSeletoresLocais(predioId, locais) {
+            const selectOrigem = document.getElementById('origem-select');
+            const selectDestino = document.getElementById('destino-select');
+            
+            selectOrigem.innerHTML = '<option value="">Selecione um local</option>';
+            selectDestino.innerHTML = '<option value="">Selecione um local</option>';
+            
+            locais.forEach(local => {
+                const option1 = document.createElement('option');
+                option1.value = JSON.stringify({
+                    predio_id: predioId,
+                    local_id: local.id,
+                    coordenadas: local.coordenadas
+                });
+                option1.textContent = local.nome;
+                selectOrigem.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = JSON.stringify({
+                    predio_id: predioId,
+                    local_id: local.id,
+                    coordenadas: local.coordenadas
+                });
+                option2.textContent = local.nome;
+                selectDestino.appendChild(option2);
+            });
+        }
+
+        // Event listeners antigos removidos - código migrado para navegação entre prédios
+        
+        // Voltar ao mapa geral
+        document.getElementById('voltar-mapa-btn').addEventListener('click', () => {
+            voltarMapaGeral();
+        });
+        
+        function voltarMapaGeral() {
+            // Clear internal floor plan overlays
+            if (mapaAtual) {
+                map.removeLayer(mapaAtual);
+                mapaAtual = null;
+            }
+            
+            if (svgOverlay) {
+                map.removeLayer(svgOverlay);
+                svgOverlay = null;
+            }
+            
+            // Limpar marcadores
+            marcadores.forEach(m => map.removeLayer(m));
+            marcadores = [];
+            
+            limparRota();
+            
+            // Desativar modo planta interna
+            modoPlantaInterna = false;
+            document.getElementById('voltar-mapa-btn').classList.remove('visible');
+            
+            // Voltar para visão geral
+            if (geojsonLayer) {
+                map.fitBounds(geojsonLayer.getBounds(), { padding: [50, 50] });
+            }
+            
+            adicionarMensagemBot('🗺️ Voltando ao mapa geral da universidade.');
+        }
+
+        // ==== CHAT ====
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-input-form');
+        const chatInput = document.getElementById('chat-input');
+
+        function adicionarMensagem(texto, tipo) {
+            const div = document.createElement('div');
+            div.className = `message ${tipo}`;
+            
+            // Formatar texto com bullet points em HTML
+            let textoFormatado = texto
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Negrito
+                .replace(/\n\n/g, '<br><br>')  // Parágrafos
+                .replace(/\n/g, '<br>')  // Quebras de linha
+                .replace(/^• /gm, '&bull; ')  // Bullet principal
+                .replace(/  - /g, '&nbsp;&nbsp;&nbsp;&#8226; ');  // Sub-bullets
+            
+            div.innerHTML = textoFormatado;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function adicionarMensagemBot(texto) {
+            adicionarMensagem(texto, 'bot');
+        }
+
+        function adicionarMensagemUsuario(texto) {
+            adicionarMensagem(texto, 'user');
+        }
+
+        // Detectar intenção de navegação na mensagem
+        function detectarIntencaoNavegacao(mensagem) {
+            const msg = mensagem.toLowerCase();
+            
+            // Lista de prédios possíveis
+            const predios = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'sc', 't'];
+            const nomesPredios = {
+                'a': 'A', 'b': 'B', 'c': 'C', 'd': 'D', 'e': 'E', 
+                'f': 'F', 'g': 'G', 'h': 'H', 'j': 'J', 'k': 'K', 
+                'm': 'M', 'sc': 'SC', 't': 'T',
+                'building a': 'A', 'building b': 'B', 'building c': 'C',
+                'building d': 'D', 'building e': 'E', 'building f': 'F',
+                'building g': 'G', 'building h': 'H', 'building j': 'J',
+                'building k': 'K', 'building m': 'M', 'building t': 'T',
+                'predio a': 'A', 'predio b': 'B', 'predio c': 'C',
+                'predio d': 'D', 'predio e': 'E', 'predio f': 'F',
+                'predio g': 'G', 'predio h': 'H', 'predio j': 'J',
+                'predio k': 'K', 'predio m': 'M', 'predio t': 'T',
+                'prédio a': 'A', 'prédio b': 'B', 'prédio c': 'C',
+                'student centre': 'SC', 'centro estudantil': 'SC'
+            };
+            
+            let origem = null;
+            let destino = null;
+            
+            // Padrões de origem: "estou em/no", "estou na", "estou no predio"
+            const padraoOrigem = /(estou|tô|to) (em|no|na|no predio|no prédio|na building|no building)\s+([a-z]+)/gi;
+            const matchOrigem = msg.match(padraoOrigem);
+            if (matchOrigem) {
+                for (let key in nomesPredios) {
+                    if (msg.includes(key)) {
+                        origem = nomesPredios[key];
+                        break;
+                    }
+                }
+            }
+            
+            // Padrões de destino: "ir para", "quero ir", "como chegar", "ir ao/à"
+            const padraoDestino = /(ir|chegar|vou|quero ir|como chegar|ir para|ir ao|ir à|ir no|ir na|para o|para a)\s+(predio|prédio|building)?\s*([a-z]+)/gi;
+            const matchDestino = msg.match(padraoDestino);
+            if (matchDestino) {
+                // Procurar último prédio mencionado (geralmente é o destino)
+                for (let i = predios.length - 1; i >= 0; i--) {
+                    const predio = predios[i];
+                    if (msg.includes(' ' + predio) || msg.includes(predio + ' ') || 
+                        msg.includes('building ' + predio) || msg.includes('predio ' + predio) ||
+                        msg.includes('prédio ' + predio)) {
+                        destino = predio.toUpperCase();
+                        break;
+                    }
+                }
+            }
+            
+            // Extrair menções diretas de letras (ex: "A para M", "de B para H")
+            const matchDireto = msg.match(/\b([a-z])\s+(para|ate|até)\s+([a-z])\b/i);
+            if (matchDireto) {
+                origem = matchDireto[1].toUpperCase();
+                destino = matchDireto[3].toUpperCase();
+            }
+            
+            return { origem, destino };
+        }
+
+        // Send message to chatbot
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mensagem = chatInput.value.trim();
+            
+            if (!mensagem) return;
+
+            adicionarMensagemUsuario(mensagem);
+            chatInput.value = '';
+
+            try {
+                const response = await fetch(`${API_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ mensagem })
+                });
+
+                const data = await response.json();
+                adicionarMensagemBot(data.resposta);
+
+                // Se o chatbot identificou origem e destino, apenas atualizar marcadores
+                if (data.origem && data.destino) {
+                    // Atualizar cores dos marcadores
+                    atualizarMarcadoresPredios(data.origem, data.destino);
+                    
+                    document.getElementById('limpar-rota-predios').style.display = 'block';
+                } else if (data.origem) {
+                    // Só origem identificada
+                    atualizarMarcadoresPredios(data.origem, null);
+                } else if (data.destino) {
+                    // Só destino identificado
+                    atualizarMarcadoresPredios(null, data.destino);
+                }
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                adicionarMensagemBot('Desculpe, ocorreu um erro ao processar sua mensagem.');
+            }
+        });
+
+        // Inicializar aplicação
+        carregarGeoJSON();  // Carrega GeoJSON primeiro
+        // carregarPredios(); // Função antiga desabilitada
+        carregarPrediosDisponiveis();  // Carregar prédios para navegação
+        
+        // ==================== NAVEGAÇÃO ENTRE PRÉDIOS ====================
+        
+        let linhaRotaPredios = null;
+        let marcadoresRotaPredios = [];
+        
+        // Carregar lista de prédios disponíveis
+        async function carregarPrediosDisponiveis() {
+            console.log('🔍 Iniciando carregamento de prédios disponíveis...');
+            console.log('🌐 API_URL:', API_URL);
+            
+            try {
+                const url = `${API_URL}/api/predios-disponiveis`;
+                console.log('📡 Fazendo fetch para:', url);
+                
+                const response = await fetch(url);
+                console.log('📨 Response status:', response.status);
+                console.log('📨 Response ok:', response.ok);
+                
+                const data = await response.json();
+                console.log('📦 Dados recebidos:', data);
+                
+                const selectOrigem = document.getElementById('predio-origem');
+                const selectDestino = document.getElementById('predio-destino');
+                
+                console.log('🎯 Elementos encontrados:', {
+                    origem: selectOrigem ? 'SIM' : 'NÃO',
+                    destino: selectDestino ? 'SIM' : 'NÃO'
+                });
+                
+                if (!selectOrigem || !selectDestino) {
+                    console.error('❌ Elementos select não encontrados!');
+                    return;
+                }
+                
+                // Clear current options
+                selectOrigem.innerHTML = '<option value="">Selecione o prédio</option>';
+                selectDestino.innerHTML = '<option value="">Selecione o prédio</option>';
+                
+                // Adicionar prédios
+                data.predios.forEach(predio => {
+                    const optionOrigem = document.createElement('option');
+                    optionOrigem.value = predio.ref;
+                    optionOrigem.textContent = `${predio.ref} - ${predio.nome}`;
+                    selectOrigem.appendChild(optionOrigem);
+                    
+                    const optionDestino = document.createElement('option');
+                    optionDestino.value = predio.ref;
+                    optionDestino.textContent = `${predio.ref} - ${predio.nome}`;
+                    selectDestino.appendChild(optionDestino);
+                });
+                
+                console.log(`✅ ${data.total} prédios carregados para navegação`);
+                console.log(`📝 Total de opções em origem: ${selectOrigem.options.length}`);
+                console.log(`📝 Total de opções em destino: ${selectDestino.options.length}`);
+            } catch (error) {
+                console.error('❌ Erro ao carregar prédios:', error);
+                console.error('Stack trace:', error.stack);
+            }
+        }
+        
+        // Calcular rota entre prédios
+        async function calcularRotaPredios(origemParam = null, destinoParam = null) {
+            const origem = origemParam || document.getElementById('predio-origem').value;
+            const destino = destinoParam || document.getElementById('predio-destino').value;
+            
+            if (!origem || !destino) {
+                return;
+            }
+            
+            if (origem === destino) {
+                adicionarMensagemBot('Você já está no prédio de destino!');
+                return;
+            }
+            
+            try {
+                limparRotaPredios();
+                
+                const response = await fetch(`${API_URL}/api/rota-predios`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({origem, destino})
+                });
+                
+                if (!response.ok) throw new Error('Erro ao calcular rota');
+                
+                const data = await response.json();
+                console.log('Rota calculada:', data);
+                
+                desenharRotaPredios(data.rota);
+                
+                // Mostrar informações no chat
+                const distancia = data.rota.distancia_total || 0;
+                const tempo = data.rota.tempo_estimado || 0;
+                adicionarMensagemBot(`📍 Rota calculada!\n🚶 Distância: ${distancia.toFixed(0)}m\n⏱️ Tempo estimado: ${tempo.toFixed(0)} min`);
+                
+                
+                if (data.rota.coordenadas_rota && data.rota.coordenadas_rota.length > 0) {
+                    const coords = data.rota.coordenadas_rota.map(c => [c[1], c[0]]);
+                    map.fitBounds(L.latLngBounds(coords), { padding: [50, 50] });
+                }
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                alert(`Erro: ${error.message}`);
+            }
+        }
+        
+        // Encontrar ponto mais próximo no polígono do prédio
+        function encontrarPontoMaisProximo(coords, pontoAlvo) {
+            // coords é um array de [lng, lat]
+            // pontoAlvo é [lat, lng] (formato Leaflet)
+            let menorDistancia = Infinity;
+            let pontoMaisProximo = null;
+            
+            coords.forEach(coord => {
+                const latLng = [coord[1], coord[0]]; // Converter [lng, lat] para [lat, lng]
+                const distancia = Math.sqrt(
+                    Math.pow(latLng[0] - pontoAlvo[0], 2) + 
+                    Math.pow(latLng[1] - pontoAlvo[1], 2)
+                );
+                
+                if (distancia < menorDistancia) {
+                    menorDistancia = distancia;
+                    pontoMaisProximo = latLng;
+                }
+            });
+            
+            return pontoMaisProximo;
+        }
+        
+        // Obter coordenadas do polígono de um prédio do GeoJSON
+        function obterPoligonoPredi(ref) {
+            if (!geojsonLayer) return null;
+            
+            let coordenadas = null;
+            geojsonLayer.eachLayer(layer => {
+                if (layer.feature && layer.feature.properties.ref === ref) {
+                    const geometry = layer.feature.geometry;
+                    if (geometry.type === 'Polygon') {
+                        coordenadas = geometry.coordinates[0]; // Primeiro anel do polígono
+                    } else if (geometry.type === 'MultiPolygon') {
+                        coordenadas = geometry.coordinates[0][0]; // Primeiro polígono, primeiro anel
+                    }
+                }
+            });
+            
+            return coordenadas;
+        }
+        
+        // Desenhar rota entre prédios
+        function desenharRotaPredios(rota) {
+            const caminho = rota.caminho;
+            if (!caminho || caminho.length < 2) return;
+            
+            // Construir pontos da rota simulando caminhada real
+            const pontosRota = [];
+            
+            for (let i = 0; i < caminho.length; i++) {
+                const predioAtual = caminho[i];
+                const centroAtual = [predioAtual.coords[1], predioAtual.coords[0]];
+                const poligonoAtual = obterPoligonoPredi(predioAtual.ref);
+                
+                if (i === 0) {
+                    // PRÉDIO DE ORIGEM
+                    if (poligonoAtual && caminho.length > 1) {
+                        // Adicionar centro do prédio (você está aqui)
+                        pontosRota.push(centroAtual);
+                        
+                        // Encontrar saída mais próxima do próximo destino
+                        const proximoPredioCentro = [caminho[1].coords[1], caminho[1].coords[0]];
+                        const pontoSaida = encontrarPontoMaisProximo(poligonoAtual, proximoPredioCentro);
+                        pontosRota.push(pontoSaida);
+                    } else {
+                        pontosRota.push(centroAtual);
+                    }
+                    
+                } else if (i === caminho.length - 1) {
+                    // PRÉDIO DE DESTINO
+                    if (poligonoAtual) {
+                        // Entrar pela porta mais próxima do prédio anterior
+                        const ultimoPonto = pontosRota[pontosRota.length - 1];
+                        const pontoEntrada = encontrarPontoMaisProximo(poligonoAtual, ultimoPonto);
+                        pontosRota.push(pontoEntrada);
+                        
+                        // Ir até o centro do prédio (destino final)
+                        pontosRota.push(centroAtual);
+                    } else {
+                        pontosRota.push(centroAtual);
+                    }
+                    
+                } else {
+                    // PRÉDIO INTERMEDIÁRIO (atravessar)
+                    if (poligonoAtual) {
+                        // Entrar pela porta mais próxima do ponto anterior
+                        const ultimoPonto = pontosRota[pontosRota.length - 1];
+                        const pontoEntrada = encontrarPontoMaisProximo(poligonoAtual, ultimoPonto);
+                        pontosRota.push(pontoEntrada);
+                        
+                        // Atravessar o prédio (passar pelo centro)
+                        pontosRota.push(centroAtual);
+                        
+                        // Sair pela porta mais próxima do próximo prédio
+                        const proximoPredioCentro = [caminho[i+1].coords[1], caminho[i+1].coords[0]];
+                        const pontoSaida = encontrarPontoMaisProximo(poligonoAtual, proximoPredioCentro);
+                        pontosRota.push(pontoSaida);
+                    } else {
+                        pontosRota.push(centroAtual);
+                    }
+                }
+            }
+            
+            // Linha removida - mostrar apenas marcadores
+            // linhaRotaPredios = L.polyline(pontosRota, {
+            //     color: '#FF6B6B',
+            //     weight: 4,
+            //     opacity: 0.8,
+            //     dashArray: '10, 10'
+            // }).addTo(map);
+            
+            // NÃO criar novos marcadores - apenas atualizar cores dos existentes
+            // Os marcadores já foram criados em carregarGeoJSON e são atualizados
+            // pela função atualizarMarcadoresPredios()
+        }
+        
+        // Clear route
+        function limparRotaPredios() {
+            if (linhaRotaPredios) {
+                map.removeLayer(linhaRotaPredios);
+                linhaRotaPredios = null;
+            }
+            // Não remover marcadores - eles são permanentes e apenas mudam de cor
+            marcadoresRotaPredios = [];
+            
+            // Resetar cores dos marcadores
+            atualizarMarcadoresPredios(null, null);
+            
+            // Hide clear button
+            document.getElementById('limpar-rota-predios').style.display = 'none';
+        }
+        
+        // Event listeners
+        // Botão de calcular rota removido - agora usa apenas chatbot
+        document.getElementById('limpar-rota-predios').addEventListener('click', limparRotaPredios);
+    </script>
+</body>
+</html>
