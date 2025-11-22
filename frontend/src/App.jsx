@@ -26,6 +26,7 @@ export default function FanshaweNavigator() {
   const [routeData, setRouteData] = useState(null);
   const [originBuilding, setOriginBuilding] = useState(null);
   const [destBuilding, setDestBuilding] = useState(null);
+  const [buildingInfo, setBuildingInfo] = useState(null);
   const messagesEndRef = useRef(null);
 
   const API_URL = 'http://localhost:8000';
@@ -199,12 +200,8 @@ export default function FanshaweNavigator() {
             const response = await fetch(`${API_URL}/api/predios/${props.ref}/info`);
             const data = await response.json();
             
-            if (data.texto_formatado) {
-              const infoMessage = {
-                role: 'assistant',
-                content: data.texto_formatado
-              };
-              setMessages(prev => [...prev, infoMessage]);
+            if (data.info) {
+              setBuildingInfo(data);
             }
           } catch (error) {
             console.error('Error fetching building info:', error);
@@ -362,28 +359,91 @@ export default function FanshaweNavigator() {
                 <X size={24} />
               </button>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden relative">
               {geoJsonData ? (
-                <MapContainer
-                  center={[43.0125, -81.2002]}
-                  zoom={16}
-                  style={{ height: '100%', width: '100%' }}
-                  className="z-0"
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <GeoJSON 
-                    data={geoJsonData} 
-                    style={getFeatureStyle}
-                    onEachFeature={onEachFeature}
-                  />
-                  {mapBounds && <FitBounds bounds={mapBounds} />}
-                </MapContainer>
+                <>
+                  <MapContainer
+                    center={[43.0125, -81.2002]}
+                    zoom={16}
+                    style={{ height: '100%', width: '100%' }}
+                    className="z-0"
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <GeoJSON 
+                      data={geoJsonData} 
+                      style={getFeatureStyle}
+                      onEachFeature={onEachFeature}
+                    />
+                    {mapBounds && <FitBounds bounds={mapBounds} />}
+                  </MapContainer>
+                  
+                  {/* Building Info Popup */}
+                  {buildingInfo && (
+                    <div className="absolute top-4 right-4 bg-white rounded-lg shadow-2xl p-6 max-w-md z-10 border-2 border-fanshawe-red">
+                      <div className="flex justify-between items-start mb-4">
+                        <h4 className="text-xl font-bold text-fanshawe-red">
+                          {buildingInfo.info.nome}
+                        </h4>
+                        <button
+                          onClick={() => setBuildingInfo(null)}
+                          className="text-gray-500 hover:text-fanshawe-red transition-colors"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-3 text-gray-700">
+                        {buildingInfo.info.descricao && (
+                          <p className="text-sm">{buildingInfo.info.descricao}</p>
+                        )}
+                        
+                        {buildingInfo.info.andares && buildingInfo.info.andares.length > 0 && (
+                          <div>
+                            <p className="font-semibold text-sm">🏢 Floors:</p>
+                            <p className="text-sm">{buildingInfo.info.andares.join(', ')}</p>
+                          </div>
+                        )}
+                        
+                        {buildingInfo.info.facilidades && buildingInfo.info.facilidades.length > 0 && (
+                          <div>
+                            <p className="font-semibold text-sm">✨ Facilities:</p>
+                            <ul className="text-sm list-disc list-inside">
+                              {buildingInfo.info.facilidades.map((fac, idx) => (
+                                <li key={idx}>{fac}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {buildingInfo.info.salas_principais && buildingInfo.info.salas_principais.length > 0 && (
+                          <div>
+                            <p className="font-semibold text-sm">📚 Main Rooms:</p>
+                            <ul className="text-sm list-disc list-inside">
+                              {buildingInfo.info.salas_principais.slice(0, 5).map((sala, idx) => (
+                                <li key={idx}>
+                                  {sala.numero} - {sala.tipo} (Floor {sala.andar})
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {buildingInfo.info.horario_funcionamento && (
+                          <div>
+                            <p className="font-semibold text-sm">🕐 Hours:</p>
+                            <p className="text-sm">{buildingInfo.info.horario_funcionamento}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-fanshawe-cream">Loading map...</p>
+                  <p className="text-gray-800">Loading map...</p>
                 </div>
               )}
             </div>
