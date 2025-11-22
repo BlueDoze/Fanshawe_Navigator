@@ -229,15 +229,14 @@ export default function FanshaweNavigator() {
   return (
     <div className="flex h-screen bg-fanshawe-cream text-gray-800">
       {/* Sidebar */}
-      <div className="w-64 bg-fanshawe-cream border-r border-gray-300 flex flex-col">
+      <div className="w-64 bg-[#d4d6ce] border-r border-gray-300 flex flex-col">
         <div className="p-4 border-b border-gray-300">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center justify-center mb-4">
             <img 
               src="/Fanshawe_Icons/Pressbooks_Icon_Fanshawe-NorthStar_Red-removebg-preview.png" 
               alt="Fanshawe Logo" 
-              className="w-8 h-8"
+              className="w-12 h-12"
             />
-            <h1 className="text-xl font-bold text-fanshawe-red">Fanshawe Navigator</h1>
           </div>
           <button 
             onClick={() => {
@@ -267,11 +266,12 @@ export default function FanshaweNavigator() {
               >
                 Building Information
               </button>
-              <button 
-                onClick={() => setShowMap(true)}
-                className="w-full text-left p-2 rounded hover:bg-gray-200 cursor-pointer transition-colors"
+              <button
+                onClick={toggleMap}
+                className="w-full flex items-center justify-center gap-2 bg-fanshawe-red hover:bg-fanshawe-red-dark px-4 py-2 rounded transition-colors text-white mt-2"
               >
-                View Campus Map
+                <MapIcon size={20} />
+                {showMap ? 'Hide Map' : 'Show Map'}
               </button>
             </div>
           </div>
@@ -280,18 +280,6 @@ export default function FanshaweNavigator() {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-fanshawe-cream border-b border-gray-300 p-4 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-800">Fanshawe Campus Assistant</h2>
-          <button
-            onClick={toggleMap}
-            className="flex items-center gap-2 bg-fanshawe-red hover:bg-fanshawe-red-dark px-4 py-2 rounded transition-colors text-white"
-          >
-            <MapIcon size={20} />
-            {showMap ? 'Hide Map' : 'Show Map'}
-          </button>
-        </div>
-
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 bg-fanshawe-cream relative">
           {/* Watermark background */}
@@ -314,7 +302,7 @@ export default function FanshaweNavigator() {
                 <div
                   className={`max-w-[80%] rounded-lg p-4 shadow-md ${
                     msg.role === 'user'
-                      ? 'bg-gray-700 text-white border border-gray-600'
+                      ? 'bg-fanshawe-red text-white border border-fanshawe-red-dark'
                       : 'bg-white text-gray-800 border border-gray-300'
                   }`}
                 >
@@ -353,7 +341,7 @@ export default function FanshaweNavigator() {
             <button
               onClick={handleSend}
               disabled={loading}
-              className="bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors disabled:opacity-50"
+              className="bg-fanshawe-red hover:bg-fanshawe-red-dark text-white p-3 rounded-lg transition-colors disabled:opacity-50"
             >
               <Send size={20} />
             </button>
