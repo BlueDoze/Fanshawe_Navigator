@@ -229,10 +229,14 @@ export default function FanshaweNavigator() {
   return (
     <div className="flex h-screen bg-fanshawe-cream text-gray-800">
       {/* Sidebar */}
-      <div className="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
-        <div className="p-4 border-b border-gray-700">
+      <div className="w-64 bg-fanshawe-cream border-r border-gray-300 flex flex-col">
+        <div className="p-4 border-b border-gray-300">
           <div className="flex items-center gap-2 mb-4">
-            <MessageSquare className="text-fanshawe-cream" size={24} />
+            <img 
+              src="/Fanshawe_Icons/Pressbooks_Icon_Fanshawe-NorthStar_Red-removebg-preview.png" 
+              alt="Fanshawe Logo" 
+              className="w-8 h-8"
+            />
             <h1 className="text-xl font-bold text-fanshawe-red">Fanshawe Navigator</h1>
           </div>
           <button 
@@ -242,30 +246,30 @@ export default function FanshaweNavigator() {
               ]);
               setRouteData(null);
             }}
-            className="w-full bg-gray-700 hover:bg-gray-600 text-fanshawe-cream py-2 px-4 rounded transition-colors"
+            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded transition-colors"
           >
             New Chat
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="text-sm text-fanshawe-cream opacity-70">
+          <div className="text-sm text-gray-600">
             <p className="mb-2 font-semibold">Quick Actions</p>
             <div className="space-y-2">
               <button 
                 onClick={() => setInput("How do I get from building A to building B?")}
-                className="w-full text-left p-2 rounded hover:bg-gray-700 cursor-pointer transition-colors"
+                className="w-full text-left p-2 rounded hover:bg-gray-200 cursor-pointer transition-colors"
               >
                 Campus Navigation
               </button>
               <button 
                 onClick={() => setInput("What's in building A?")}
-                className="w-full text-left p-2 rounded hover:bg-gray-700 cursor-pointer transition-colors"
+                className="w-full text-left p-2 rounded hover:bg-gray-200 cursor-pointer transition-colors"
               >
                 Building Information
               </button>
               <button 
                 onClick={() => setShowMap(true)}
-                className="w-full text-left p-2 rounded hover:bg-gray-700 cursor-pointer transition-colors"
+                className="w-full text-left p-2 rounded hover:bg-gray-200 cursor-pointer transition-colors"
               >
                 View Campus Map
               </button>
@@ -277,7 +281,7 @@ export default function FanshaweNavigator() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center">
+        <div className="bg-fanshawe-cream border-b border-gray-300 p-4 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-800">Fanshawe Campus Assistant</h2>
           <button
             onClick={toggleMap}
@@ -289,8 +293,19 @@ export default function FanshaweNavigator() {
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-fanshawe-cream">
-          <div className="max-w-3xl mx-auto space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 bg-fanshawe-cream relative">
+          {/* Watermark background */}
+          <div 
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            style={{
+              backgroundImage: 'url(/Fanshawe_Icons/Fanshawe-removebg-preview.png)',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: '50%',
+              opacity: 0.05
+            }}
+          />
+          <div className="max-w-3xl mx-auto space-y-6 relative z-10">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
@@ -309,7 +324,12 @@ export default function FanshaweNavigator() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-white text-gray-800 border border-gray-300 rounded-lg p-4 shadow-md">
+                <div className="bg-white text-gray-800 border border-gray-300 rounded-lg p-4 shadow-md flex items-center gap-3">
+                  <img 
+                    src="/Fanshawe_Icons/Pressbooks_Icon_Fanshawe-NorthStar_Red-removebg-preview.png" 
+                    alt="Loading" 
+                    className="w-6 h-6 animate-spin"
+                  />
                   <p className="text-gray-600 font-semibold">Thinking...</p>
                 </div>
               </div>
